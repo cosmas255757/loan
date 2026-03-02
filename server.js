@@ -20,16 +20,17 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 /* ============================
-   MIDDLEWARE
+   1. GLOBAL MIDDLEWARE
 ============================ */
 app.use(cors());
 app.use(express.json());
 
-// 1. Serve static files (CSS, JS, images) from the 'views' folder
+// Serve all files in the 'views' folder (CSS, JS, etc.)
+// This must stay ABOVE the routes
 app.use(express.static(path.join(__dirname, 'views')));
 
 /* ============================
-   DATABASE CONNECTION TEST
+   2. DATABASE CONNECTION TEST
 ============================ */
 const checkDbConnection = async () => {
     try {
@@ -42,10 +43,8 @@ const checkDbConnection = async () => {
 checkDbConnection();
 
 /* ============================
-   ROUTES
+   3. API ROUTES
 ============================ */
-
-// API Routes
 app.use('/api/applicants', applicantRoutes);
 app.use('/api/loans', loanRoutes);
 app.use('/api/repayments', repaymentRoutes);
@@ -55,16 +54,29 @@ app.get('/api/health', (req, res) => {
     res.status(200).json({ status: 'OK', message: 'Loan System API is healthy' });
 });
 
-// FRONTEND ROUTE: Serve applicants.html as the home page
+/* ============================
+   4. FRONTEND NAVIGATION
+============================ */
+
+// Serve applicants.html as the home page
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'applicants.html'));
 });
 
+// Explicit routes for other pages (if you use direct links)
+app.get('/loans', (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'loans.html'));
+});
+
+app.get('/repayments', (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'repayments.html'));
+});
+
 /* ============================
-   ERROR HANDLING
+   5. ERROR HANDLING
 ============================ */
 
-// 404 Handler (Must be after all routes)
+// 404 Handler (This must be the LAST route)
 app.use((req, res) => {
     res.status(404).json({ success: false, message: 'Route not found' });
 });
@@ -80,8 +92,8 @@ app.use((err, req, res, next) => {
 });
 
 /* ============================
-   START SERVER
+   6. START SERVER
 ============================ */
 app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
+    console.log(`🚀 Server running on port ${PORT}`);
 });
