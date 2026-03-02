@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loan System - Applicants</title>
+    <link rel="stylesheet" href="css/applicants.css">
+</head>
+<body>
+    <!-- Main Navigation Bar -->
+    <nav class="main-navbar">
+        <div class="nav-container">
+            <span class="brand">💰 LoanSystem</span>
+            <ul class="nav-links">
+                <li><a href="applicants.html" class="active">Applicants</a></li>
+                <li><a href="loans.html">Loans</a></li>
+                <li><a href="repayments.html">Repayments</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1>Applicant Management</h1>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search by name..." onkeyup="searchApp()">
+            </div>
+        </header>
+
+        <main>
+            <!-- Create / Update Section -->
+            <section class="form-section">
+                <h2 id="formTitle">Register New Applicant</h2>
+                <form id="applicantForm">
+                    <input type="hidden" id="editId">
+                    <div class="input-group">
+                        <input type="text" id="fullName" placeholder="Full Name" required> <br>
+                        <input type="text" id="phone" placeholder="Phone Number" required>
+                    </div>
+                    <div class="button-group">
+                        <button type="submit" id="submitBtn">Save Applicant</button>
+                        <button type="button" id="cancelBtn" style="display:none;" onclick="resetForm()">Cancel Edit</button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Table Section -->
+            <section class="list-section">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Full Name</th>
+                            <th>Phone</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="applicantTableBody">
+                        <!-- JS injected rows -->
+                    </tbody>
+                </table>
+            </section>
+        </main>
+    </div>
+    <script src="js/applicants.js"></script>
+</body>
+</html>

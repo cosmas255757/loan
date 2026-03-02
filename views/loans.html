@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Loan System - Loans CRUD</title>
+    <link rel="stylesheet" href="css/applicants.css"> <!-- Reusing CSS -->
+</head>
+<body>
+    <nav class="main-navbar">
+        <div class="nav-container">
+            <span class="brand">💰 LoanSystem</span>
+            <ul class="nav-links">
+                <li><a href="applicants.html">Applicants</a></li>
+                <li><a href="loans.html" class="active">Loans</a></li>
+                <li><a href="repayments.html">Repayments</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1>Loan Management</h1>
+            <div class="search-box">
+                <input type="text" id="statusSearch" placeholder="Search by status (e.g. pending)..." onkeyup="searchByStatus()">
+            </div>
+        </header>
+
+        <main>
+            <section class="form-section">
+                <h2 id="formTitle">Issue New Loan</h2>
+                <form id="loanForm">
+                    <input type="hidden" id="editLoanId">
+                    <div class="input-group">
+                        <input type="number" id="appId" placeholder="Applicant ID" required>
+                        <input type="number" id="loanAmount" placeholder="Loan Amount" required>
+                        <select id="loanStatus" style="display:none;">
+                            <option value="pending">Pending</option>
+                            <option value="approved">Approved</option>
+                            <option value="rejected">Rejected</option>
+                            <option value="paid">Paid</option>
+                        </select>
+                    </div>
+                    <div class="button-group">
+                        <button type="submit" id="submitBtn">Create Loan</button>
+                        <button type="button" id="cancelBtn" style="display:none;" onclick="resetForm()">Cancel Edit</button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="list-section">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>App ID</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="loanTableBody"></tbody>
+                </table>
+            </section>
+        </main>
+    </div>
+    <script src="js/loans.js"></script>
+</body>
+</html>

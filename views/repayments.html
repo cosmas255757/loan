@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Loan System - Repayments CRUD</title>
+    <link rel="stylesheet" href="css/applicants.css">
+</head>
+<body>
+    <nav class="main-navbar">
+        <div class="nav-container">
+            <span class="brand">💰 LoanSystem</span>
+            <ul class="nav-links">
+                <li><a href="applicants.html">Applicants</a></li>
+                <li><a href="loans.html">Loans</a></li>
+                <li><a href="repayments.html" class="active">Repayments</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1>Repayment Tracking</h1>
+            <div class="search-box">
+                <input type="number" id="loanSearchId" placeholder="Filter by Loan ID..." onkeyup="searchByLoan()">
+            </div>
+        </header>
+
+        <main>
+            <section class="form-section">
+                <h2 id="formTitle">Record New Payment</h2>
+                <form id="repaymentForm">
+                    <input type="hidden" id="editRepaymentId">
+                    <div class="input-group">
+                        <input type="number" id="loanId" placeholder="Loan ID" required>
+                        <input type="number" step="0.01" id="amountPaid" placeholder="Amount Paid" required>
+                        <input type="date" id="paymentDate" required>
+                    </div>
+                    <div class="button-group">
+                        <button type="submit" id="submitBtn">Save Payment</button>
+                        <button type="button" id="cancelBtn" style="display:none;" onclick="resetForm()">Cancel Edit</button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="list-section">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Loan ID</th>
+                            <th>Amount Paid</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="repaymentTableBody"></tbody>
+                </table>
+            </section>
+        </main>
+    </div>
+    <script src="js/repayments.js"></script>
+</body>
+</html>
