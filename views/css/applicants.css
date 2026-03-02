@@ -1,89 +1,30 @@
+/* --- 1. GLOBAL & ANIMATIONS --- */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f4f7f6;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background-color: #f0f2f5;
     margin: 0;
     color: #333;
+    line-height: 1.6;
 }
 
-.container {
-    width: 90%;
-    max-width: 1000px;
-    margin: 20px auto;
+/* Apply fade-in animation to main sections */
+.form-section, .list-section, .main-navbar {
+    animation: fadeIn 0.5s ease-out forwards;
 }
 
-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: #2c3e50;
-    padding: 1rem 2rem;
-    color: white;
-    border-radius: 8px;
-}
-
-nav a {
-    color: #bdc3c7;
-    text-decoration: none;
-    margin-left: 15px;
-}
-
-nav a.active {
-    color: #3498db;
-    font-weight: bold;
-}
-
-.form-section, .list-section {
-    background: white;
-    padding: 20px;
-    margin-top: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-
-.form-group {
-    margin-bottom: 15px;
-}
-
-label { display: block; margin-bottom: 5px; font-weight: 600; }
-
-input {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    box-sizing: border-box;
-}
-
-.btn-submit {
-    background-color: #27ae60;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 15px;
-}
-
-th, td {
-    text-align: left;
-    padding: 12px;
-    border-bottom: 1px solid #eee;
-}
-
-th { background-color: #f8f9fa; }
-
-
-/* Navigation Styles */
+/* --- 2. NAVIGATION (RESPONSIVE) --- */
 .main-navbar {
-    background-color: #2c3e50;
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
     padding: 1rem 0;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
 }
 
 .nav-container {
@@ -93,12 +34,14 @@ th { background-color: #f8f9fa; }
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap; /* Allows wrapping on small screens */
 }
 
 .brand {
-    color: #ecf0f1;
+    color: #ffffff;
     font-size: 1.5rem;
-    font-weight: bold;
+    font-weight: 800;
+    letter-spacing: 1px;
 }
 
 .nav-links {
@@ -106,46 +49,164 @@ th { background-color: #f8f9fa; }
     margin: 0;
     padding: 0;
     display: flex;
+    gap: 20px;
 }
-
-.nav-links li { margin-left: 25px; }
 
 .nav-links a {
     color: #bdc3c7;
     text-decoration: none;
     font-weight: 500;
-    transition: color 0.3s;
+    padding: 5px 10px;
+    border-radius: 5px;
+    transition: all 0.3s ease;
 }
 
 .nav-links a:hover, .nav-links a.active {
-    color: #3498db;
+    color: #fff;
+    background: rgba(52, 152, 219, 0.2);
+    box-shadow: inset 0 -2px 0 #3498db;
 }
 
-/* Layout Adjustments */
+/* --- 3. LAYOUT & CONTAINERS --- */
+.container {
+    width: 95%;
+    max-width: 1100px;
+    margin: 20px auto;
+}
+
+header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.form-section, .list-section {
+    background: white;
+    padding: 25px;
+    margin-top: 20px;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+    transition: transform 0.3s ease;
+}
+
+/* Subtle hover effect for cards */
+.form-section:hover, .list-section:hover {
+    transform: translateY(-2px);
+}
+
+/* --- 4. FORMS & INPUTS --- */
 .input-group {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+input, select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #dfe6e9;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.button-group {
     display: flex;
     gap: 10px;
-    margin-bottom: 15px;
+    flex-wrap: wrap;
 }
 
-.input-group input { flex: 1; }
+button {
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+}
 
-.button-group { display: flex; gap: 10px; }
+#submitBtn { background: #27ae60; color: white; }
+#submitBtn:hover { background: #219150; transform: scale(1.02); }
 
+#cancelBtn { background: #95a5a6; color: white; }
+
+/* --- 5. TABLES (MOBILE RESPONSIVE) --- */
+.table-container {
+    overflow-x: auto; /* Allows horizontal scroll on tiny phones */
+    width: 100%;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th {
+    background-color: #f8f9fa;
+    color: #7f8c8d;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+}
+
+th, td {
+    padding: 16px;
+    text-align: left;
+    border-bottom: 1px solid #f1f1f1;
+}
+
+tr:hover { background-color: #fdfdfd; }
+
+/* --- 6. STATUS BADGES --- */
 .status-badge {
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 0.85rem;
-    text-transform: capitalize;
-    font-weight: bold;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: inline-block;
 }
-.pending { background: #f1c40f; color: #000; }
-.approved { background: #2ecc71; color: #fff; }
-.rejected { background: #e74c3c; color: #fff; }
-.paid { background: #3498db; color: #fff; }
 
-select {
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+.pending { background: #fff9db; color: #f08c00; }
+.approved { background: #ebfbee; color: #2b8a3e; }
+.rejected { background: #fff5f5; color: #c92a2a; }
+.paid { background: #e7f5ff; color: #1971c2; }
+
+/* --- 7. MOBILE BREAKPOINTS --- */
+@media (max-width: 768px) {
+    .nav-container {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+
+    .nav-links li { margin: 0 5px; }
+
+    header {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .search-box input {
+        width: 100%;
+    }
+
+    th, td {
+        padding: 10px 8px;
+        font-size: 0.9rem;
+    }
+
+    .form-section, .list-section {
+        padding: 15px;
+    }
 }
