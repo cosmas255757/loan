@@ -1,12 +1,19 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Import Routes
 import applicantRoutes from './routes/applicantRoutes.js';
-import pool from './config/db.js';
 import loanRoutes from './routes/loanRoutes.js';
 import repaymentRoutes from './routes/repaymentRoutes.js';
+import pool from './config/db.js';
 
-// Load environment variables (from a .env file)
+// Setup for __dirname in ES Modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 dotenv.config();
 
 const app = express();
@@ -15,29 +22,21 @@ const PORT = process.env.PORT || 3000;
 /* ============================
    MIDDLEWARE
 ============================ */
-
-// Enable CORS (Essential if your frontend is on a different port/domain)
 app.use(cors());
-
-// Body parser
 app.use(express.json());
 
-app.use('/api/applicants', applicantRoutes);
-app.use('/api/loans', loanRoutes);
-app.use('/api/repayments', repaymentRoutes);
-app.use(express.static('views'));
+// 1. Serve static files (CSS, JS, images) from the 'views' folder
+app.use(express.static(path.join(__dirname, 'views')));
 
 /* ============================
    DATABASE CONNECTION TEST
 ============================ */
-
 const checkDbConnection = async () => {
     try {
         const res = await pool.query('SELECT NOW()');
         console.log('✅ Database connected at:', res.rows[0].now);
     } catch (err) {
         console.error('❌ Database connection failed:', err.message);
-        // We don't crash the app, but we log the major failure
     }
 };
 checkDbConnection();
@@ -46,46 +45,43 @@ checkDbConnection();
    ROUTES
 ============================ */
 
-// Health Check
-app.get('/health', (req, res) => {
+// API Routes
+app.use('/api/applicants', applicantRoutes);
+app.use('/api/loans', loanRoutes);
+app.use('/api/repayments', repaymentRoutes);
+
+// Health Check API
+app.get('/api/health', (req, res) => {
     res.status(200).json({ status: 'OK', message: 'Loan System API is healthy' });
 });
 
-// Root route
+// FRONTEND ROUTE: Serve applicants.html as the home page
 app.get('/', (req, res) => {
-    res.send('Welcome to the Loan Management System API');
+    res.sendFile(path.join(__dirname, 'views', 'applicants.html'));
 });
-
-// Applicant routes - Standardized to /api prefix
-app.use('/api/applicants', applicantRoutes);
 
 /* ============================
    ERROR HANDLING
 ============================ */
 
-// 404 Handler
+// 404 Handler (Must be after all routes)
 app.use((req, res) => {
     res.status(404).json({ success: false, message: 'Route not found' });
 });
 
-// Global Error Handler (Catches all unexpected errors)
+// Global Error Handler
 app.use((err, req, res, next) => {
     const statusCode = err.statusCode || 500;
     console.error(`[Global Error]: ${err.message}`);
-    
     res.status(statusCode).json({
         success: false,
-        message: err.message || 'Internal Server Error',
-        // Only show stack trace in development mode
-        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+        message: err.message || 'Internal Server Error'
     });
 });
 
 /* ============================
    START SERVER
 ============================ */
-
 app.listen(PORT, () => {
-    console.log(`🚀 Server running in ${process.env.NODE_ENV || 'development'} mode`);
-    console.log(`📡 Access via: http://localhost:${PORT}`);
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
 });

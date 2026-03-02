@@ -1,4 +1,5 @@
-const API_URL = 'http://localhost:3000/api/repayments';
+//const API_URL = 'http://localhost:3000/api/repayments';
+const API_URL = '/api/applicants'; 
 
 document.addEventListener('DOMContentLoaded', fetchRepayments);
 
