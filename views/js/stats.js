@@ -1,4 +1,10 @@
-const STATS_API = '/api/stats';
+/**
+ * Dashboard JavaScript - Fully Synced with Backend
+ */
+
+// Updated to match your router.get('/dashboard', ...) path
+// This assumes your main server mounts the stats router at /api/stats
+const STATS_API = '/api/stats/dashboard'; 
 
 /**
  * FETCH AND DISPLAY DASHBOARD DATA
@@ -6,18 +12,27 @@ const STATS_API = '/api/stats';
 async function loadDashboard() {
     try {
         const res = await fetch(STATS_API);
+        
+        // Handle HTTP errors (e.g., 404 or 500)
+        if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+        }
+
         const result = await res.json();
         
-        // Ensure data exists before mapping
+        // Check for the success flag sent by your controller
         if (!result.success || !result.data) {
-            console.error("No data received from API");
+            console.error("API returned success:false or empty data");
             return;
         }
 
-        // The model returns an array, we take the first row [0]
-        const data = result.data[0]; 
+        /**
+         * FIX: Your model already returns "stats.rows[0]".
+         * result.data is now the object itself, NOT an array.
+         */
+        const data = result.data; 
 
-        // 1. Update Core KPIs
+        // 1. Update Core KPIs (matching SQL keys)
         document.getElementById('totalApplicants').innerText = data.total_applicants || 0;
         document.getElementById('activeLoans').innerText = data.active_loans_count || 0;
         
@@ -28,7 +43,7 @@ async function loadDashboard() {
         document.getElementById('totalBalance').innerText = 
             formatCurrency(data.total_outstanding_balance);
 
-        // 3. Update Time-based Performance
+        // 3. Update Time-based Performance (matching SQL aliases)
         document.getElementById('repaidToday').innerText = 
             formatCurrency(data.repaid_today);
         
@@ -45,11 +60,15 @@ async function loadDashboard() {
 
 /**
  * HELPER: Format numbers to TZS Currency
+ * Handles the fact that PostgreSQL returns SUM/COUNT as strings
  */
 function formatCurrency(value) {
     const amount = parseFloat(value || 0);
-    return 'TSh ' + amount.toLocaleString();
+    return 'TSh ' + amount.toLocaleString('en-US', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    });
 }
 
-// Initial Load
+// Initial Load when the page is ready
 document.addEventListener('DOMContentLoaded', loadDashboard);

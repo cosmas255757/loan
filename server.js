@@ -3,9 +3,9 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import statsRoutes from './routes/statsRoutes.js'; 
 
 // Import Routes
+import statsRoutes from './routes/statsRoutes.js'; 
 import applicantRoutes from './routes/applicantRoutes.js';
 import loanRoutes from './routes/loanRoutes.js';
 import repaymentRoutes from './routes/repaymentRoutes.js';
@@ -29,15 +29,52 @@ app.use(cors({
 
 app.use(express.json());
 
-// Serve all files in the 'views' folder (CSS, JS, etc.)
-// This must stay ABOVE the routes
+// Serve static files (CSS, JS, images) from the 'views' folder
 app.use(express.static(path.join(__dirname, 'views')));
 
-// Mount the stats routes under a specific path (e.g., /api/stats)
+/* ============================
+   2. API ROUTES
+============================ */
+// Mount the stats routes (This enables /api/stats/dashboard)
 app.use('/api/stats', statsRoutes);
+app.use('/api/applicants', applicantRoutes);
+app.use('/api/loans', loanRoutes);
+app.use('/api/repayments', repaymentRoutes);
+
+// Health Check API
+app.get('/api/health', (req, res) => {
+    res.status(200).json({ status: 'OK', message: 'Loan System API is healthy' });
+});
 
 /* ============================
-   2. DATABASE CONNECTION TEST
+   3. FRONTEND NAVIGATION (PAGE ROUTES)
+============================ */
+
+// CHANGE: Set stats.html (Dashboard) as the DEFAULT home page
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'stats.html'));
+});
+
+// Explicit route for dashboard/stats
+app.get('/dashboard', (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'stats.html'));
+});
+
+// Other pages
+app.get('/applicants', (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'applicants.html'));
+});
+
+app.get('/loans', (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'loans.html'));
+});
+
+app.get('/repayments', (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'repayments.html'));
+});
+
+/* ============================
+   4. DATABASE CONNECTION TEST
 ============================ */
 const checkDbConnection = async () => {
     try {
@@ -50,45 +87,12 @@ const checkDbConnection = async () => {
 checkDbConnection();
 
 /* ============================
-   3. API ROUTES
-============================ */
-app.use('/api/applicants', applicantRoutes);
-app.use('/api/loans', loanRoutes);
-app.use('/api/repayments', repaymentRoutes);
-
-// Health Check API
-app.get('/api/health', (req, res) => {
-    res.status(200).json({ status: 'OK', message: 'Loan System API is healthy' });
-});
-
-/* ============================
-   4. FRONTEND NAVIGATION
-============================ */
-
-// Serve applicants.html as the home page
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'applicants.html'));
-});
-
-// Explicit routes for other pages (if you use direct links)
-app.get('/loans', (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'loans.html'));
-});
-
-app.get('/repayments', (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'repayments.html'));
-});
-
-/* ============================
    5. ERROR HANDLING
 ============================ */
-
-// 404 Handler (This must be the LAST route)
 app.use((req, res) => {
     res.status(404).json({ success: false, message: 'Route not found' });
 });
 
-// Global Error Handler
 app.use((err, req, res, next) => {
     const statusCode = err.statusCode || 500;
     console.error(`[Global Error]: ${err.message}`);
@@ -103,4 +107,5 @@ app.use((err, req, res, next) => {
 ============================ */
 app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📊 Dashboard available at http://localhost:${PORT}`);
 });
