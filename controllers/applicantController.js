@@ -74,24 +74,23 @@ export const getApplicant = async (req, res) => {
     }
 };
 
-export const editApplicant = async (req, res) => {
+export const updateApplicant = async (id, full_name, phone, living_location, occupation, sex, relationship_status) => {
     try {
-        const { id } = req.params;
-        const { full_name, phone } = req.body;
-
-        if (!full_name || !phone) {
-            return res.status(400).json({ message: "Update failed: Missing name or phone" });
-        }
-
-        const updated = await updateApplicant(id, full_name, phone);
-
-        if (!updated) {
-            return res.status(404).json({ message: "Applicant not found" });
-        }
-
-        sendSuccess(res, { message: "Updated successfully", updated });
+        const result = await pool.query(
+            `UPDATE applicants 
+             SET full_name = $1, 
+                 phone = $2, 
+                 living_location = $3, 
+                 occupation = $4, 
+                 sex = $5, 
+                 relationship_status = $6
+             WHERE id = $7
+             RETURNING *`,
+            [full_name, phone, living_location, occupation, sex, relationship_status, id]
+        );
+        return result.rows[0];
     } catch (error) {
-        sendError(res, error);
+        handleDbError('updateApplicant', error);
     }
 };
 

@@ -37,7 +37,7 @@ export const createApplicant = async (
     }
 };
 
-
+// get all applicants...
 export const getAllApplicants = async () => {
     try {
         const result = await pool.query(
@@ -64,21 +64,26 @@ export const getApplicantById = async (id) => {
     }
 };
 
-export const updateApplicant = async (id, full_name, phone) => {
+export const updateApplicant = async (id, full_name, phone, living_location, occupation, sex, relationship_status) => {
     try {
         const result = await pool.query(
-            `UPDATE applicants
-             SET full_name = $1,
-                 phone = $2
-             WHERE id = $3
+            `UPDATE applicants 
+             SET full_name = $1, 
+                 phone = $2, 
+                 living_location = $3, 
+                 occupation = $4, 
+                 sex = $5, 
+                 relationship_status = $6
+             WHERE id = $7
              RETURNING *`,
-            [full_name, phone, id]
+            [full_name, phone, living_location, occupation, sex, relationship_status, id]
         );
-        return result.rows[0] || null;
+        return result.rows[0];
     } catch (error) {
         handleDbError('updateApplicant', error);
     }
 };
+
 
 export const deleteApplicant = async (id) => {
     try {
