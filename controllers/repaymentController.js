@@ -15,6 +15,7 @@ const sendError = (res, error) => {
     res.status(500).json({ success: false, message: "Internal Server Error", error: error.message });
 };
 
+// --- CREATE ---
 export const addRepayment = async (req, res) => {
     try {
         const { loan_id, amount_paid, payment_date } = req.body;
@@ -25,7 +26,7 @@ export const addRepayment = async (req, res) => {
 
         const repayment = await createRepayment(loan_id, amount_paid, payment_date);
         
-        // Get new total to show progress
+        // Get updated total for the response
         const totalPaid = await getTotalPaidForLoan(loan_id);
 
         sendSuccess(res, { 
@@ -38,15 +39,18 @@ export const addRepayment = async (req, res) => {
     }
 };
 
+// --- LIST ALL (Now includes Applicant Name, Amount Left, and Status) ---
 export const listRepayments = async (req, res) => {
     try {
         const repayments = await getAllRepayments();
-        sendSuccess(res, repayments);
+        // Return as an object for consistent parsing in frontend
+        sendSuccess(res, { count: repayments.length, repayments });
     } catch (error) {
         sendError(res, error);
     }
 };
 
+// --- GET SINGLE ---
 export const getRepayment = async (req, res) => {
     try {
         const { id } = req.params;
@@ -62,27 +66,33 @@ export const getRepayment = async (req, res) => {
     }
 };
 
+// --- LIST BY LOAN ---
 export const listRepaymentsByLoan = async (req, res) => {
     try {
         const { loan_id } = req.params;
-        const repayments = await getRepaymentsByLoan(loan_id);
+        const history = await getRepaymentsByLoan(loan_id);
         const total = await getTotalPaidForLoan(loan_id);
 
         sendSuccess(res, { 
             loan_id,
-            count: repayments.length, 
+            count: history.length, 
             total_paid: total,
-            history: repayments 
+            history 
         });
     } catch (error) {
         sendError(res, error);
     }
 };
 
+// --- UPDATE ---
 export const editRepayment = async (req, res) => {
     try {
         const { id } = req.params;
         const { amount_paid, payment_date } = req.body;
+
+        if (amount_paid === undefined || !payment_date) {
+            return res.status(400).json({ message: "Amount and Date are required for update" });
+        }
 
         const updated = await updateRepayment(id, amount_paid, payment_date);
 
@@ -90,12 +100,13 @@ export const editRepayment = async (req, res) => {
             return res.status(404).json({ message: "Repayment record not found" });
         }
 
-        sendSuccess(res, { message: "Repayment updated", updated });
+        sendSuccess(res, { message: "Repayment updated", repayment: updated });
     } catch (error) {
         sendError(res, error);
     }
 };
 
+// --- DELETE ---
 export const removeRepayment = async (req, res) => {
     try {
         const { id } = req.params;
