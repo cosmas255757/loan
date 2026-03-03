@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import statsRoutes from './routes/statsRoutes.js'; 
 
 // Import Routes
 import applicantRoutes from './routes/applicantRoutes.js';
@@ -31,6 +32,9 @@ app.use(express.json());
 // Serve all files in the 'views' folder (CSS, JS, etc.)
 // This must stay ABOVE the routes
 app.use(express.static(path.join(__dirname, 'views')));
+
+// Mount the stats routes under a specific path (e.g., /api/stats)
+app.use('/api/stats', statsRoutes);
 
 /* ============================
    2. DATABASE CONNECTION TEST
