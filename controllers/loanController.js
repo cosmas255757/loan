@@ -17,6 +17,7 @@ const sendError = (res, error) => {
     res.status(500).json({ success: false, message: "Internal Server Error", error: error.message });
 };
 
+// --- CREATE ---
 export const addLoan = async (req, res) => {
     try {
         const { applicant_id, amount } = req.body;
@@ -26,21 +27,25 @@ export const addLoan = async (req, res) => {
         }
 
         const loan = await createLoan(applicant_id, amount);
+        // Note: createLoan returns the raw insert; the name join happens on 'list'
         sendSuccess(res, { message: "Loan created successfully", loan }, 201);
     } catch (error) {
         sendError(res, error);
     }
 };
 
+// --- LIST ALL (Now includes applicant_name from Model Join) ---
 export const listLoans = async (req, res) => {
     try {
         const loans = await getAllLoans();
-        sendSuccess(res, loans);
+        // Wrapping in an object for easier frontend parsing
+        sendSuccess(res, { count: loans.length, loans });
     } catch (error) {
         sendError(res, error);
     }
 };
 
+// --- GET SINGLE ---
 export const getLoan = async (req, res) => {
     try {
         const { id } = req.params;
@@ -56,6 +61,7 @@ export const getLoan = async (req, res) => {
     }
 };
 
+// --- LIST BY APPLICANT ---
 export const listLoansByApplicant = async (req, res) => {
     try {
         const { applicant_id } = req.params;
@@ -66,13 +72,15 @@ export const listLoansByApplicant = async (req, res) => {
     }
 };
 
+// --- UPDATE ---
 export const editLoan = async (req, res) => {
     try {
         const { id } = req.params;
         const { amount, status } = req.body;
 
-        if (!amount || !status) {
-            return res.status(400).json({ message: "Amount and Status are required for update" });
+        // Validation
+        if (amount === undefined || !status) {
+            return res.status(400).json({ message: "Amount and Status are required" });
         }
 
         const updated = await updateLoan(id, amount, status);
@@ -81,12 +89,13 @@ export const editLoan = async (req, res) => {
             return res.status(404).json({ message: "Loan not found" });
         }
 
-        sendSuccess(res, { message: "Loan updated", updated });
+        sendSuccess(res, { message: "Loan updated successfully", loan: updated });
     } catch (error) {
         sendError(res, error);
     }
 };
 
+// --- DELETE ---
 export const removeLoan = async (req, res) => {
     try {
         const { id } = req.params;
@@ -102,6 +111,7 @@ export const removeLoan = async (req, res) => {
     }
 };
 
+// --- SEARCH BY STATUS ---
 export const searchLoans = async (req, res) => {
     try {
         const { status } = req.query;
@@ -111,7 +121,7 @@ export const searchLoans = async (req, res) => {
         }
 
         const results = await searchLoansByStatus(status);
-        sendSuccess(res, { count: results.length, results });
+        sendSuccess(res, { count: results.length, loans: results });
     } catch (error) {
         sendError(res, error);
     }

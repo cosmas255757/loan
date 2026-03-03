@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Loan System - Loans CRUD</title>
-    <link rel="stylesheet" href="css/applicants.css"> <!-- Reusing CSS -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loan System - Manage Loans</title>
+    <link rel="stylesheet" href="css/applicants.css">
 </head>
 <body>
     <nav class="main-navbar">
@@ -21,7 +22,14 @@
         <header>
             <h1>Loan Management</h1>
             <div class="search-box">
-                <input type="text" id="statusSearch" placeholder="Search by status (e.g. pending)..." onkeyup="searchByStatus()">
+                <!-- Changed to status filter for better UX -->
+                <select id="statusFilter" onchange="filterByStatus()">
+                    <option value="">All Statuses</option>
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                    <option value="paid">Paid</option>
+                </select>
             </div>
         </header>
 
@@ -31,14 +39,25 @@
                 <form id="loanForm">
                     <input type="hidden" id="editLoanId">
                     <div class="input-group">
-                        <input type="number" id="appId" placeholder="Applicant ID" required>
-                        <input type="number" id="loanAmount" placeholder="Loan Amount" required>
-                        <select id="loanStatus" style="display:none;">
-                            <option value="pending">Pending</option>
-                            <option value="approved">Approved</option>
-                            <option value="rejected">Rejected</option>
-                            <option value="paid">Paid</option>
+                        <!-- User Friendly: Select by Name instead of typing ID -->
+                        <label for="appId">Select Applicant:</label>
+                        <select id="appId" required>
+                            <option value="">-- Loading Applicants... --</option>
                         </select>
+
+                        <label for="loanAmount">Amount (TZS):</label>
+                        <input type="number" id="loanAmount" placeholder="Enter Amount" required min="1000">
+                        
+                        <!-- Status only shows during Edit mode -->
+                        <div id="statusContainer" style="display:none;">
+                            <label for="loanStatus">Loan Status:</label>
+                            <select id="loanStatus">
+                                <option value="pending">Pending</option>
+                                <option value="approved">Approved</option>
+                                <option value="rejected">Rejected</option>
+                                <option value="paid">Paid</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="button-group">
                         <button type="submit" id="submitBtn">Create Loan</button>
@@ -48,18 +67,22 @@
             </section>
 
             <section class="list-section">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>App ID</th>
-                            <th>Amount</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="loanTableBody"></tbody>
-                </table>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Applicant Name</th>
+                                <th>Loan Amount</th>
+                                <th>Current Status</th>
+                                <th>Date Issued</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="loanTableBody">
+                            <!-- JS will inject rows here -->
+                        </tbody>
+                    </table>
+                </div>
             </section>
         </main>
     </div>
