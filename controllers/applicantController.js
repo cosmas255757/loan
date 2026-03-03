@@ -15,22 +15,40 @@ const sendError = (res, error) => {
     console.error("Controller Error:", error.message);
     res.status(500).json({ message: "Internal Server Error", error: error.message });
 };
-
 export const addApplicant = async (req, res) => {
     try {
-        const { full_name, phone } = req.body;
+        const { 
+            full_name, 
+            phone, 
+            living_location, 
+            occupation, 
+            sex, 
+            relationship_status 
+        } = req.body;
 
-        // Basic Validation
+        // Validation: Check for required fields
         if (!full_name || !phone) {
             return res.status(400).json({ message: "Full name and phone are required" });
         }
 
-        const applicant = await createApplicant(full_name, phone);
-        sendSuccess(res, { message: "Applicant created", applicant }, 201);
+        // Pass all fields to the model function
+        const applicant = await createApplicant(
+            full_name, 
+            phone, 
+            living_location, 
+            occupation, 
+            sex, 
+            relationship_status
+        );
+
+        sendSuccess(res, { message: "Applicant created successfully", applicant }, 201);
     } catch (error) {
+        // If the database CHECK constraint fails (e.g., wrong 'sex' value), 
+        // sendError will catch it here.
         sendError(res, error);
     }
 };
+
 
 export const listApplicants = async (req, res) => {
     try {

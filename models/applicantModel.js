@@ -8,19 +8,35 @@ const handleDbError = (operation, error) => {
     throw error;
 };
 
-export const createApplicant = async (full_name, phone) => {
+// create a new applicant..
+export const createApplicant = async (
+    full_name, 
+    phone, 
+    living_location, 
+    occupation, 
+    sex, 
+    relationship_status
+) => {
     try {
         const result = await pool.query(
-            `INSERT INTO applicants (full_name, phone)
-             VALUES ($1, $2)
+            `INSERT INTO applicants (
+                full_name, 
+                phone, 
+                living_location, 
+                occupation, 
+                sex, 
+                relationship_status
+             )
+             VALUES ($1, $2, $3, $4, $5, $6)
              RETURNING *`,
-            [full_name, phone]
+            [full_name, phone, living_location, occupation, sex, relationship_status]
         );
         return result.rows[0];
     } catch (error) {
         handleDbError('createApplicant', error);
     }
 };
+
 
 export const getAllApplicants = async () => {
     try {
