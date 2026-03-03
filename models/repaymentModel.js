@@ -5,7 +5,7 @@ const handleRepaymentError = (operation, error) => {
     throw error;
 };
 
-// --- READ ALL (With calculations and Joins) ---
+// --- READ ALL (With Running Balance Logic) ---
 export const getAllRepayments = async () => {
     try {
         const result = await pool.query(
@@ -14,19 +14,23 @@ export const getAllRepayments = async () => {
                 a.full_name as applicant_name,
                 r.amount_paid,
                 l.amount as original_loan_amount,
-                -- Subquery to find total paid for this loan so far to calculate balance
-                (l.amount - (SELECT COALESCE(SUM(amount_paid), 0) FROM repayments WHERE loan_id = l.id)) as amount_left,
+                -- CALCULATE RUNNING BALANCE (Amount Left at this specific point in time)
+                (l.amount - (
+                    SELECT COALESCE(SUM(amount_paid), 0) 
+                    FROM repayments 
+                    WHERE loan_id = l.id AND id <= r.id
+                )) as amount_left,
                 r.payment_date,
-                -- Status Logic
+                -- STATUS: Based on the total paid for the whole loan
                 CASE 
-                    WHEN (SELECT COALESCE(SUM(amount_paid), 0) FROM repayments WHERE loan_id = l.id) <= 0 THEN 'loading'
-                    WHEN (SELECT COALESCE(SUM(amount_paid), 0) FROM repayments WHERE loan_id = l.id) < l.amount THEN 'inprogress'
-                    ELSE 'paid'
+                    WHEN (SELECT COALESCE(SUM(amount_paid), 0) FROM repayments WHERE loan_id = l.id) >= l.amount THEN 'paid'
+                    WHEN (SELECT COALESCE(SUM(amount_paid), 0) FROM repayments WHERE loan_id = l.id) > 0 THEN 'inprogress'
+                    ELSE 'loading'
                 END as status
              FROM repayments r
              JOIN loans l ON r.loan_id = l.id
              JOIN applicants a ON l.applicant_id = a.id
-             ORDER BY r.payment_date DESC`
+             ORDER BY r.id DESC`
         );
         return result.rows;
     } catch (error) {
@@ -48,6 +52,33 @@ export const getRepaymentById = async (id) => {
         return result.rows[0] || null;
     } catch (error) {
         handleRepaymentError('getRepaymentById', error);
+    }
+};
+
+// --- READ BY LOAN (Required by Controller) ---
+export const getRepaymentsByLoan = async (loan_id) => {
+    try {
+        const result = await pool.query(
+            `SELECT 
+                r.id,
+                a.full_name as applicant_name,
+                r.amount_paid,
+                (l.amount - (SELECT COALESCE(SUM(amount_paid), 0) FROM repayments WHERE loan_id = l.id AND id <= r.id)) as amount_left,
+                r.payment_date,
+                CASE 
+                    WHEN (SELECT SUM(amount_paid) FROM repayments WHERE loan_id = l.id) >= l.amount THEN 'paid'
+                    ELSE 'inprogress'
+                END as status
+             FROM repayments r
+             JOIN loans l ON r.loan_id = l.id
+             JOIN applicants a ON l.applicant_id = a.id
+             WHERE r.loan_id = $1
+             ORDER BY r.id DESC`,
+            [loan_id]
+        );
+        return result.rows;
+    } catch (error) {
+        handleRepaymentError('getRepaymentsByLoan', error);
     }
 };
 
@@ -108,34 +139,5 @@ export const getTotalPaidForLoan = async (loan_id) => {
         return parseFloat(result.rows[0].total_paid);
     } catch (error) {
         handleRepaymentError('getTotalPaidForLoan', error);
-    }
-};
-
-// --- READ ALL PAYMENTS FOR A SPECIFIC LOAN ---
-export const getRepaymentsByLoan = async (loan_id) => {
-    try {
-        const result = await pool.query(
-            `SELECT 
-                r.id,
-                a.full_name as applicant_name,
-                r.amount_paid,
-                l.amount as original_loan_amount,
-                (l.amount - (SELECT SUM(amount_paid) FROM repayments WHERE loan_id = l.id AND id <= r.id)) as amount_left,
-                r.payment_date,
-                CASE 
-                    WHEN (SELECT SUM(amount_paid) FROM repayments WHERE loan_id = l.id) < l.amount THEN 'inprogress'
-                    ELSE 'paid'
-                END as status
-             FROM repayments r
-             JOIN loans l ON r.loan_id = l.id
-             JOIN applicants a ON l.applicant_id = a.id
-             WHERE r.loan_id = $1
-             ORDER BY r.payment_date DESC`,
-            [loan_id]
-        );
-        return result.rows;
-    } catch (error) {
-        console.error("Repayment Model Error [getRepaymentsByLoan]:", error.message);
-        throw error;
     }
 };
