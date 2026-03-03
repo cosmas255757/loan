@@ -4,57 +4,55 @@
 const API_URL = '/api/applicants'; 
 
 
+
 document.addEventListener('DOMContentLoaded', fetchApplicants);
 
 // --- READ ALL ---
-function displayApplicants(applicants) {
-    const tableBody = document.getElementById('applicantTableBody');
-    tableBody.innerHTML = ''; // Clear previous data
-
-    applicants.forEach(app => {
-        const row = `
-            <tr>
-                <td class="font-bold">${app.full_name}</td>
-                <td>${app.phone}</td>
-                <td>${app.living_location || '-'}</td>
-                <td>${app.occupation || '-'}</td>
-                <td>${app.sex || '-'}</td>
-                <td>${app.relationship_status || '-'}</td>
-                <td class="actions">
-                    <!-- Note: We still use app.id for the logic, just not for display -->
-                    <button class="edit-btn" onclick="editApplicant(${app.id})">Edit</button>
-                    <button class="delete-btn" onclick="deleteApplicant(${app.id})">Delete</button>
-                </td>
-            </tr>
-        `;
-        tableBody.insertAdjacentHTML('beforeend', row);
-    });
+async function fetchApplicants() {
+    try {
+        const res = await fetch(API_URL);
+        const data = await res.json();
+        // Access the array inside the response (adjust based on your sendSuccess format)
+        renderTable(data.applicants || data || []);
+    } catch (err) {
+        console.error("Fetch error:", err);
+    }
 }
 
+// --- RENDER TABLE (One consistent function for Search & List) ---
+function renderTable(applicants) {
+    const tbody = document.getElementById('applicantTableBody');
+    tbody.innerHTML = ''; // Clear previous data
 
-// --- SEARCH (READ with query) ---
+    if (applicants.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No applicants found.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = applicants.map(app => `
+        <tr>
+            <td class="font-bold">${app.full_name}</td>
+            <td>${app.phone}</td>
+            <td>${app.living_location || '-'}</td>
+            <td>${app.occupation || '-'}</td>
+            <td>${app.sex || '-'}</td>
+            <td>${app.relationship_status || '-'}</td>
+            <td class="actions">
+                <button class="btn-edit" onclick='prepareEdit(${JSON.stringify(app)})'>Edit</button>
+                <button class="btn-delete" onclick="deleteApp(${app.id})">Delete</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// --- SEARCH ---
 async function searchApp() {
     const name = document.getElementById('searchInput').value;
     if (!name) return fetchApplicants();
     
     const res = await fetch(`${API_URL}/search?name=${name}`);
     const data = await res.json();
-    renderTable(data.results || []);
-}
-
-function renderTable(applicants) {
-    const tbody = document.getElementById('applicantTableBody');
-    tbody.innerHTML = applicants.map(app => `
-        <tr>
-            <td>${app.id}</td>
-            <td>${app.full_name}</td>
-            <td>${app.phone}</td>
-            <td>
-                <button class="btn-edit" onclick="prepareEdit(${app.id}, '${app.full_name}', '${app.phone}')">Edit</button>
-                <button class="btn-delete" onclick="deleteApp(${app.id})">Delete</button>
-            </td>
-        </tr>
-    `).join('');
+    renderTable(data.results || data || []);
 }
 
 // --- CREATE & UPDATE ---
@@ -63,33 +61,35 @@ document.getElementById('applicantForm').addEventListener('submit', async (e) =>
     
     const id = document.getElementById('editId').value;
     
-    // ALL 6 values from the form
-    const full_name = document.getElementById('fullName').value;
-    const phone = document.getElementById('phone').value;
-    const living_location = document.getElementById('livingLocation').value;
-    const occupation = document.getElementById('occupation').value;
-    const sex = document.getElementById('sex').value;
-    const relationship_status = document.getElementById('relationshipStatus').value;
+    const payload = {
+        full_name: document.getElementById('fullName').value,
+        phone: document.getElementById('phone').value,
+        living_location: document.getElementById('livingLocation').value,
+        occupation: document.getElementById('occupation').value,
+        sex: document.getElementById('sex').value,
+        relationship_status: document.getElementById('relationshipStatus').value
+    };
 
     const method = id ? 'PUT' : 'POST';
     const url = id ? `${API_URL}/${id}` : API_URL;
 
-    // Send all 6 values in the body
-    await fetch(url, {
-        method: method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-            full_name, 
-            phone, 
-            living_location, 
-            occupation, 
-            sex, 
-            relationship_status 
-        })
-    });
+    try {
+        const res = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
 
-    resetForm();
-    fetchApplicants();
+        if (res.ok) {
+            resetForm();
+            fetchApplicants();
+        } else {
+            const err = await res.json();
+            alert("Error: " + err.message);
+        }
+    } catch (err) {
+        console.error("Submission error:", err);
+    }
 });
 
 // --- DELETE ---
@@ -101,13 +101,23 @@ async function deleteApp(id) {
 }
 
 // --- UI HELPERS ---
-function prepareEdit(id, name, phone) {
-    document.getElementById('editId').value = id;
-    document.getElementById('fullName').value = name;
-    document.getElementById('phone').value = phone;
+function prepareEdit(app) {
+    // Fill ALL fields in the form
+    document.getElementById('editId').value = app.id;
+    document.getElementById('fullName').value = app.full_name;
+    document.getElementById('phone').value = app.phone;
+    document.getElementById('livingLocation').value = app.living_location || "";
+    document.getElementById('occupation').value = app.occupation || "";
+    document.getElementById('sex').value = app.sex || "";
+    document.getElementById('relationshipStatus').value = app.relationship_status || "";
+
+    // Update UI Labels
     document.getElementById('submitBtn').innerText = "Update Applicant";
-    document.getElementById('formTitle').innerText = "Editing Applicant #" + id;
+    document.getElementById('formTitle').innerText = "Editing: " + app.full_name;
     document.getElementById('cancelBtn').style.display = "inline-block";
+    
+    // Scroll to form
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function resetForm() {
