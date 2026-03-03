@@ -74,25 +74,41 @@ export const getApplicant = async (req, res) => {
     }
 };
 
-export const editApplicant = async (id, full_name, phone, living_location, occupation, sex, relationship_status) => {
+
+export const editApplicant = async (req, res) => {
     try {
-        const result = await pool.query(
-            `UPDATE applicants 
-             SET full_name = $1, 
-                 phone = $2, 
-                 living_location = $3, 
-                 occupation = $4, 
-                 sex = $5, 
-                 relationship_status = $6
-             WHERE id = $7
-             RETURNING *`,
-            [full_name, phone, living_location, occupation, sex, relationship_status, id]
+        const { id } = req.params; // Gets '3' from /api/applicants/3
+        const { 
+            full_name, 
+            phone, 
+            living_location, 
+            occupation, 
+            sex, 
+            relationship_status 
+        } = req.body;
+
+        // Call the model function with all arguments
+        const updated = await updateApplicant(
+            id, 
+            full_name, 
+            phone, 
+            living_location, 
+            occupation, 
+            sex, 
+            relationship_status
         );
-        return result.rows[0];
+
+        if (!updated) {
+            return res.status(404).json({ message: "Applicant not found" });
+        }
+
+        res.status(200).json({ message: "Updated successfully", applicant: updated });
     } catch (error) {
-        handleDbError('updateApplicant', error);
+        console.error(error);
+        res.status(500).json({ message: "Server Error" });
     }
 };
+
 
 export const removeApplicant = async (req, res) => {
     try {

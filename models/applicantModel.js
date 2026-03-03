@@ -64,6 +64,7 @@ export const getApplicantById = async (id) => {
     }
 };
 
+
 export const updateApplicant = async (id, full_name, phone, living_location, occupation, sex, relationship_status) => {
     try {
         const result = await pool.query(
