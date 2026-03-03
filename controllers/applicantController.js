@@ -74,7 +74,7 @@ export const getApplicant = async (req, res) => {
     }
 };
 
-export const updateApplicant = async (id, full_name, phone, living_location, occupation, sex, relationship_status) => {
+export const editApplicant = async (id, full_name, phone, living_location, occupation, sex, relationship_status) => {
     try {
         const result = await pool.query(
             `UPDATE applicants 
