@@ -7,11 +7,30 @@ const API_URL = '/api/applicants';
 document.addEventListener('DOMContentLoaded', fetchApplicants);
 
 // --- READ ALL ---
-async function fetchApplicants() {
-    const res = await fetch(API_URL);
-    const data = await res.json();
-    renderTable(data);
+function displayApplicants(applicants) {
+    const tableBody = document.getElementById('applicantTableBody');
+    tableBody.innerHTML = ''; // Clear previous data
+
+    applicants.forEach(app => {
+        const row = `
+            <tr>
+                <td class="font-bold">${app.full_name}</td>
+                <td>${app.phone}</td>
+                <td>${app.living_location || '-'}</td>
+                <td>${app.occupation || '-'}</td>
+                <td>${app.sex || '-'}</td>
+                <td>${app.relationship_status || '-'}</td>
+                <td class="actions">
+                    <!-- Note: We still use app.id for the logic, just not for display -->
+                    <button class="edit-btn" onclick="editApplicant(${app.id})">Edit</button>
+                    <button class="delete-btn" onclick="deleteApplicant(${app.id})">Delete</button>
+                </td>
+            </tr>
+        `;
+        tableBody.insertAdjacentHTML('beforeend', row);
+    });
 }
+
 
 // --- SEARCH (READ with query) ---
 async function searchApp() {

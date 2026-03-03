@@ -70,20 +70,26 @@
 
             <!-- Table Section -->
             <section class="list-section">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Full Name</th>
-                            <th>Phone</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="applicantTableBody">
-                        <!-- JS injected rows -->
-                    </tbody>
-                </table>
-            </section>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Full Name</th>
+                    <th>Phone Number</th>
+                    <th>Location</th>
+                    <th>Occupation</th>
+                    <th>Sex</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="applicantTableBody">
+                <!-- Data will be injected here by fetchApplicants() -->
+            </tbody>
+        </table>
+    </div>
+</section>
+
         </main>
     </div>
     <script src="js/applicants.js"></script>
