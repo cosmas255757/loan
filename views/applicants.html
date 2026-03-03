@@ -31,17 +31,41 @@
             <!-- Create / Update Section -->
             <section class="form-section">
                 <h2 id="formTitle">Register New Applicant</h2>
-                <form id="applicantForm">
+              <form id="applicantForm">
                     <input type="hidden" id="editId">
+                    
                     <div class="input-group">
-                        <input type="text" id="fullName" placeholder="Full Name" required> <br>
+                        <!-- Existing Fields -->
+                        <input type="text" id="fullName" placeholder="Full Name" required>
                         <input type="text" id="phone" placeholder="Phone Number" required>
+
+                        <!-- New Fields -->
+                        <input type="text" id="livingLocation" placeholder="Living Location">
+                        <input type="text" id="occupation" placeholder="Occupation">
+
+                        <!-- Dropdowns for restricted values -->
+                        <select id="sex">
+                            <option value="">Select Sex</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+
+                        <select id="relationshipStatus">
+                            <option value="">Select Relationship Status</option>
+                            <option value="Single">Single</option>
+                            <option value="Married">Married</option>
+                            <option value="Divorced">Divorced</option>
+                            <option value="Widowed">Widowed</option>
+                        </select>
                     </div>
+
                     <div class="button-group">
                         <button type="submit" id="submitBtn">Save Applicant</button>
                         <button type="button" id="cancelBtn" style="display:none;" onclick="resetForm()">Cancel Edit</button>
                     </div>
                 </form>
+
             </section>
 
             <!-- Table Section -->

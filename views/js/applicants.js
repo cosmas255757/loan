@@ -41,17 +41,32 @@ function renderTable(applicants) {
 // --- CREATE & UPDATE ---
 document.getElementById('applicantForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+    
     const id = document.getElementById('editId').value;
+    
+    // ALL 6 values from the form
     const full_name = document.getElementById('fullName').value;
     const phone = document.getElementById('phone').value;
+    const living_location = document.getElementById('livingLocation').value;
+    const occupation = document.getElementById('occupation').value;
+    const sex = document.getElementById('sex').value;
+    const relationship_status = document.getElementById('relationshipStatus').value;
 
     const method = id ? 'PUT' : 'POST';
     const url = id ? `${API_URL}/${id}` : API_URL;
 
+    // Send all 6 values in the body
     await fetch(url, {
         method: method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ full_name, phone })
+        body: JSON.stringify({ 
+            full_name, 
+            phone, 
+            living_location, 
+            occupation, 
+            sex, 
+            relationship_status 
+        })
     });
 
     resetForm();
