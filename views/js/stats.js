@@ -1,9 +1,7 @@
 /**
- * Dashboard JavaScript - Fully Synced with Backend
+ * Dashboard JavaScript - Fully Synced with 13 Backend Logics
  */
 
-// Updated to match your router.get('/dashboard', ...) path
-// This assumes your main server mounts the stats router at /api/stats
 const STATS_API = '/api/stats/dashboard'; 
 
 /**
@@ -13,54 +11,53 @@ async function loadDashboard() {
     try {
         const res = await fetch(STATS_API);
         
-        // Handle HTTP errors (e.g., 404 or 500)
         if (!res.ok) {
             throw new Error(`HTTP error! status: ${res.status}`);
         }
 
         const result = await res.json();
         
-        // Check for the success flag sent by your controller
         if (!result.success || !result.data) {
             console.error("API returned success:false or empty data");
             return;
         }
 
-        /**
-         * FIX: Your model already returns "stats.rows[0]".
-         * result.data is now the object itself, NOT an array.
-         */
+        // result.data contains our 13 keys from the SQL SELECT statement
         const data = result.data; 
 
-        // 1. Update Core KPIs (matching SQL keys)
-        document.getElementById('totalApplicants').innerText = data.total_applicants || 0;
-        document.getElementById('activeLoans').innerText = data.active_loans_count || 0;
-        
-        // 2. Format and Update Currency Values
-        document.getElementById('totalLoanValue').innerText = 
-            formatCurrency(data.total_loan_value);
-        
-        document.getElementById('totalBalance').innerText = 
-            formatCurrency(data.total_outstanding_balance);
+        // --- 1. APPLICANTS & STATUS COUNTS ---
+        document.getElementById('total_applicants').innerText = data.total_applicants || 0;
+        document.getElementById('pending_loans_count').innerText = data.pending_loans_count || 0;
+        document.getElementById('active_loans_count').innerText = data.active_loans_count || 0;
 
-        // 3. Update Time-based Performance (matching SQL aliases)
-        document.getElementById('repaidToday').innerText = 
-            formatCurrency(data.repaid_today);
+        // --- 2. LOANED AMOUNTS (CAPITAL OUT) ---
+        document.getElementById('loaned_today').innerText = formatCurrency(data.loaned_today);
+        document.getElementById('loaned_this_week').innerText = formatCurrency(data.loaned_this_week);
+        document.getElementById('loaned_this_month').innerText = formatCurrency(data.loaned_this_month);
+        document.getElementById('loaned_this_year').innerText = formatCurrency(data.loaned_this_year);
+
+        // --- 3. COLLECTED AMOUNTS (REPAYMENTS IN) ---
+        document.getElementById('collected_today').innerText = formatCurrency(data.collected_today);
+        document.getElementById('collected_week').innerText = formatCurrency(data.collected_week);
+        document.getElementById('collected_month').innerText = formatCurrency(data.collected_month);
+        document.getElementById('collected_year').innerText = formatCurrency(data.collected_year);
+
+        // --- 4. FINANCIAL CALCULATIONS ---
+        // Total amount still needed to be collected
+        document.getElementById('total_outstanding_balance').innerText = formatCurrency(data.total_outstanding_balance);
         
-        document.getElementById('repaidWeek').innerText = 
-            formatCurrency(data.repaid_this_week);
-        
-        document.getElementById('repaidMonth').innerText = 
-            formatCurrency(data.repaid_this_month);
+        // Logic 13: Monthly Profit Projection (20% of monthly loaned)
+        document.getElementById('estimated_monthly_profit').innerText = formatCurrency(data.estimated_monthly_profit);
 
     } catch (err) {
         console.error("Dashboard failed to load:", err);
+        // Optional: Update UI to show error state
     }
 }
 
 /**
  * HELPER: Format numbers to TZS Currency
- * Handles the fact that PostgreSQL returns SUM/COUNT as strings
+ * PostgreSQL returns SUM/COUNT as strings, so parseFloat is required
  */
 function formatCurrency(value) {
     const amount = parseFloat(value || 0);
