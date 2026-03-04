@@ -1,26 +1,25 @@
 document.getElementById('registerForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-
-    const full_name = document.getElementById('regName').value;
-    const email = document.getElementById('regEmail').value;
-    const password = document.getElementById('regPassword').value;
+    const data = {
+        full_name: document.getElementById('regName').value,
+        email: document.getElementById('regEmail').value,
+        password: document.getElementById('regPassword').value
+    };
 
     try {
         const response = await fetch('/api/auth/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ full_name, email, password })
+            body: JSON.stringify(data)
         });
-
         const result = await response.json();
-
         if (result.success) {
-            alert("Account created! Please login.");
-            window.location.href = 'login.html'; // Send them back to login
+            alert("Success! Please login.");
+            window.location.href = 'login.html';
         } else {
-            alert(result.message || "Registration failed.");
+            alert(result.message);
         }
     } catch (err) {
-        console.error("Registration Error:", err);
+        alert("Server error. Check your connection.");
     }
 });

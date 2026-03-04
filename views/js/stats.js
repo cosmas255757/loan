@@ -1,88 +1,72 @@
 /**
- * Dashboard JavaScript - Fully Synced with 13 Backend Logics & Multi-User Auth
+ * Dashboard JavaScript - Fully Synced with HTML and Backend Model
  */
 
-const STATS_API = '/api/stats/dashboard'; 
+const API_URL = '/api/stats/dashboard';
 
-/**
- * FETCH AND DISPLAY DASHBOARD DATA
- */
-async function loadDashboard() {
-    // 1. Get the token saved during login
+async function fetchDashboardStats() {
     const token = localStorage.getItem('token');
 
-    // 2. Redirect to login if not authenticated
+    // 1. Security Check: Redirect if no token
     if (!token) {
         window.location.href = 'login.html';
         return;
     }
 
     try {
-        // 3. Send the token in the Authorization header
-        const res = await fetch(STATS_API, {
+        const response = await fetch(API_URL, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             }
         });
-        
-        if (res.status === 401 || res.status === 403) {
-            // Token expired or invalid
+
+        // 2. Handle Session Expiry
+        if (response.status === 401 || response.status === 403) {
             localStorage.removeItem('token');
             window.location.href = 'login.html';
             return;
         }
 
-        if (!res.ok) {
-            throw new Error(`HTTP error! status: ${res.status}`);
+        const result = await response.json();
+
+        if (result.success) {
+            const data = result.data;
+
+            // Helper to format currency
+            const fmt = (val) => 'TSh ' + parseFloat(val || 0).toLocaleString('en-US');
+
+            // --- SECTION 1: SYSTEM STATUS & COUNTS ---
+            document.getElementById('total_applicants').innerText = data.total_applicants || 0;
+            document.getElementById('pending_loans_count').innerText = data.pending_loans_count || 0;
+            document.getElementById('active_loans_count').innerText = data.active_loans_count || 0;
+            document.getElementById('total_outstanding_balance').innerText = fmt(data.total_outstanding_balance);
+
+            // --- SECTION 2: CAPITAL ISSUED (LOANED) ---
+            document.getElementById('loaned_today').innerText = fmt(data.loaned_today);
+            document.getElementById('loaned_this_week').innerText = fmt(data.loaned_this_week);
+            document.getElementById('loaned_this_month').innerText = fmt(data.loaned_this_month);
+            document.getElementById('loaned_this_year').innerText = fmt(data.loaned_this_year);
+
+            // --- SECTION 3: REVENUE COLLECTED (REPAYMENTS) ---
+            // Note: Mapping backend "collected_this_..." to your HTML "collected_..."
+            document.getElementById('collected_today').innerText = fmt(data.collected_today);
+            document.getElementById('collected_week').innerText = fmt(data.collected_this_week);
+            document.getElementById('collected_month').innerText = fmt(data.collected_this_month);
+            document.getElementById('collected_year').innerText = fmt(data.collected_this_year);
+
+            // --- SECTION 4: PROFIT PROJECTION ---
+            document.getElementById('estimated_monthly_profit').innerText = fmt(data.estimated_monthly_profit);
+
+        } else {
+            console.error("Server Error:", result.message);
         }
 
-        const result = await res.json();
-        
-        if (!result.success || !result.data) {
-            console.error("API returned success:false or empty data");
-            return;
-        }
-
-        const data = result.data; 
-
-        // --- 1. APPLICANTS & STATUS COUNTS ---
-        document.getElementById('total_applicants').innerText = data.total_applicants || 0;
-        document.getElementById('pending_loans_count').innerText = data.pending_loans_count || 0;
-        document.getElementById('active_loans_count').innerText = data.active_loans_count || 0;
-
-        // --- 2. LOANED AMOUNTS (CAPITAL OUT) ---
-        document.getElementById('loaned_today').innerText = formatCurrency(data.loaned_today);
-        document.getElementById('loaned_this_week').innerText = formatCurrency(data.loaned_this_week);
-        document.getElementById('loaned_this_month').innerText = formatCurrency(data.loaned_this_month);
-        document.getElementById('loaned_this_year').innerText = formatCurrency(data.loaned_this_year);
-
-        // --- 3. COLLECTED AMOUNTS (REPAYMENTS IN) ---
-        document.getElementById('collected_today').innerText = formatCurrency(data.collected_today);
-        document.getElementById('collected_week').innerText = formatCurrency(data.collected_this_week); 
-        document.getElementById('collected_month').innerText = formatCurrency(data.collected_this_month); 
-        document.getElementById('collected_year').innerText = formatCurrency(data.collected_this_year); 
-
-        // --- 4. FINANCIAL CALCULATIONS ---
-        document.getElementById('total_outstanding_balance').innerText = formatCurrency(data.total_outstanding_balance);
-        document.getElementById('estimated_monthly_profit').innerText = formatCurrency(data.estimated_monthly_profit);
-
-    } catch (err) {
-        console.error("Dashboard failed to load:", err);
+    } catch (error) {
+        console.error("Connection Error:", error);
     }
 }
 
-/**
- * HELPER: Format numbers to TZS Currency
- */
-function formatCurrency(value) {
-    const amount = parseFloat(value || 0);
-    return 'TSh ' + amount.toLocaleString('en-US', {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-    });
-}
-
-// Initial Load when the page is ready
-document.addEventListener('DOMContentLoaded', loadDashboard);
+// Execute on page load
+document.addEventListener('DOMContentLoaded', fetchDashboardStats);

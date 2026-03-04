@@ -1,5 +1,17 @@
-document.getElementById('loginForm').addEventListener('submit', async (e) => {
+const loginForm = document.getElementById('loginForm');
+const loginBtn = loginForm.querySelector('.btn-auth');
+
+// 1. Pre-check: If already logged in, skip the login page
+if (localStorage.getItem('token')) {
+    window.location.href = 'stats.html';
+}
+
+loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
+
+    // UI Feedback: Disable button to prevent double-clicks
+    loginBtn.disabled = true;
+    loginBtn.innerText = "Authenticating...";
 
     const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
@@ -14,15 +26,20 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
         const result = await response.json();
 
         if (result.success) {
-            // 1. Save the JWT Token to LocalStorage
+            // ✅ SUCCESS: Save JWT and go to Dashboard
             localStorage.setItem('token', result.token);
-            // 2. Redirect to Dashboard
             window.location.href = 'stats.html';
         } else {
-            alert(result.message || "Login failed. Check your credentials.");
+            // ❌ FAIL: Show error and clear password for security
+            alert(result.message || "Invalid email or password.");
+            document.getElementById('loginPassword').value = ''; 
         }
     } catch (err) {
         console.error("Login Error:", err);
-        alert("Server connection failed.");
+        alert("Connection error. Is the server running?");
+    } finally {
+        // Reset button state
+        loginBtn.disabled = false;
+        loginBtn.innerText = "Login to Dashboard";
     }
 });
