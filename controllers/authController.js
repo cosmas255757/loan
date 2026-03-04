@@ -8,7 +8,7 @@ export const register = async (req, res) => {
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
         const newUser = await pool.query(
-            'INSERT INTO users (full_name, email, password_hash) VALUES ($1, $2, $3) RETURNING id',
+            'INSERT INTO users (full_name, email, password_hash) VALUES ($1, $2, $3) RETURNING *',
             [full_name, email, hashedPassword]
         );
         res.status(201).json({ success: true, message: "User created successfully!" });
