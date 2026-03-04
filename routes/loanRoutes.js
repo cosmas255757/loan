@@ -8,36 +8,30 @@ import {
     removeLoan,
     searchLoans
 } from '../controllers/loanController.js';
+// Import the gatekeeper
+import { authenticateToken } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
 /**
- * LOAN ROUTES
+ * LOAN ROUTES (Protected)
  * Base Path: /api/loans
  */
 
-// 1. SEARCH & FILTER (Specific routes first)
-// @route   GET /api/loans/search?status=pending
-router.get('/search', searchLoans);
+// Apply authentication to ALL routes below
+router.use(authenticateToken);
 
-// @route   GET /api/loans/applicant/:applicant_id
+// 1. SEARCH & FILTER
+router.get('/search', searchLoans);
 router.get('/applicant/:applicant_id', listLoansByApplicant);
 
 // 2. GENERAL READ/WRITE
-// @route   GET /api/loans/
 router.get('/', listLoans);
-
-// @route   POST /api/loans/
 router.post('/', addLoan);
 
-// 3. ID-SPECIFIC OPERATIONS (Generic routes last)
-// @route   GET /api/loans/:id
+// 3. ID-SPECIFIC OPERATIONS
 router.get('/:id', getLoan);
-
-// @route   PUT /api/loans/:id
 router.put('/:id', editLoan);
-
-// @route   DELETE /api/loans/:id
 router.delete('/:id', removeLoan);
 
 export default router;
