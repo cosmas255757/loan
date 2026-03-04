@@ -1,5 +1,5 @@
 /**
- * Dashboard JavaScript - Fully Synced with 13 Backend Logics
+ * Dashboard JavaScript - Fully Synced with 13 Backend Logics & Multi-User Auth
  */
 
 const STATS_API = '/api/stats/dashboard'; 
@@ -8,9 +8,32 @@ const STATS_API = '/api/stats/dashboard';
  * FETCH AND DISPLAY DASHBOARD DATA
  */
 async function loadDashboard() {
+    // 1. Get the token saved during login
+    const token = localStorage.getItem('token');
+
+    // 2. Redirect to login if not authenticated
+    if (!token) {
+        window.location.href = 'login.html';
+        return;
+    }
+
     try {
-        const res = await fetch(STATS_API);
+        // 3. Send the token in the Authorization header
+        const res = await fetch(STATS_API, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
         
+        if (res.status === 401 || res.status === 403) {
+            // Token expired or invalid
+            localStorage.removeItem('token');
+            window.location.href = 'login.html';
+            return;
+        }
+
         if (!res.ok) {
             throw new Error(`HTTP error! status: ${res.status}`);
         }
@@ -22,32 +45,26 @@ async function loadDashboard() {
             return;
         }
 
-        // result.data contains our 13 keys from the SQL SELECT statement
         const data = result.data; 
 
         // --- 1. APPLICANTS & STATUS COUNTS ---
-        // Expected HTML IDs: total_applicants, pending_loans_count, active_loans_count
         document.getElementById('total_applicants').innerText = data.total_applicants || 0;
         document.getElementById('pending_loans_count').innerText = data.pending_loans_count || 0;
         document.getElementById('active_loans_count').innerText = data.active_loans_count || 0;
 
         // --- 2. LOANED AMOUNTS (CAPITAL OUT) ---
-        // Expected HTML IDs: loaned_today, loaned_this_week, loaned_this_month, loaned_this_year
         document.getElementById('loaned_today').innerText = formatCurrency(data.loaned_today);
         document.getElementById('loaned_this_week').innerText = formatCurrency(data.loaned_this_week);
         document.getElementById('loaned_this_month').innerText = formatCurrency(data.loaned_this_month);
         document.getElementById('loaned_this_year').innerText = formatCurrency(data.loaned_this_year);
 
         // --- 3. COLLECTED AMOUNTS (REPAYMENTS IN) ---
-        // FIX: Added "_this" to match your SQL aliases (collected_this_week, etc.)
-        // Expected HTML IDs: collected_today, collected_week, collected_month, collected_year
         document.getElementById('collected_today').innerText = formatCurrency(data.collected_today);
         document.getElementById('collected_week').innerText = formatCurrency(data.collected_this_week); 
         document.getElementById('collected_month').innerText = formatCurrency(data.collected_this_month); 
         document.getElementById('collected_year').innerText = formatCurrency(data.collected_this_year); 
 
         // --- 4. FINANCIAL CALCULATIONS ---
-        // Expected HTML IDs: total_outstanding_balance, estimated_monthly_profit
         document.getElementById('total_outstanding_balance').innerText = formatCurrency(data.total_outstanding_balance);
         document.getElementById('estimated_monthly_profit').innerText = formatCurrency(data.estimated_monthly_profit);
 
@@ -58,7 +75,6 @@ async function loadDashboard() {
 
 /**
  * HELPER: Format numbers to TZS Currency
- * PostgreSQL returns SUM/COUNT as strings, so parseFloat is required
  */
 function formatCurrency(value) {
     const amount = parseFloat(value || 0);

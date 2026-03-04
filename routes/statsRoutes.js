@@ -1,9 +1,10 @@
 import express from 'express';
 import { getStats } from '../controllers/statsController.js';
+import { authenticateToken } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// Define the route for dashboard statistics
-router.get('/dashboard', getStats);
+// Only logged-in users can reach the dashboard
+router.get('/dashboard', authenticateToken, getStats);
 
 export default router;
