@@ -4,23 +4,28 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
 body {
     font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     background-color: #f0f2f5;
-    margin: 0;
     color: #333;
     line-height: 1.6;
 }
 
 /* Apply fade-in animation to main sections */
-.form-section, .list-section, .main-navbar {
+.form-section, .list-section, .main-navbar, .stats-grid {
     animation: fadeIn 0.5s ease-out forwards;
 }
 
-/* --- 2. NAVIGATION (RESPONSIVE) --- */
+/* --- 2. NAVIGATION (RESPONSIVE & LOGOUT) --- */
 .main-navbar {
     background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-    padding: 1rem 0;
+    padding: 0.8rem 0;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     position: sticky;
     top: 0;
@@ -28,43 +33,55 @@ body {
 }
 
 .nav-container {
-    width: 90%;
+    width: 95%;
     max-width: 1200px;
     margin: 0 auto;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-wrap: wrap; /* Allows wrapping on small screens */
 }
 
 .brand {
     color: #ffffff;
-    font-size: 1.5rem;
+    font-size: 1.3rem;
     font-weight: 800;
     letter-spacing: 1px;
+    white-space: nowrap;
 }
 
 .nav-links {
     list-style: none;
-    margin: 0;
-    padding: 0;
     display: flex;
-    gap: 20px;
+    align-items: center;
+    gap: 10px;
 }
 
 .nav-links a {
     color: #bdc3c7;
     text-decoration: none;
     font-weight: 500;
-    padding: 5px 10px;
-    border-radius: 5px;
+    font-size: 0.9rem;
+    padding: 8px 12px;
+    border-radius: 6px;
     transition: all 0.3s ease;
 }
 
 .nav-links a:hover, .nav-links a.active {
     color: #fff;
     background: rgba(52, 152, 219, 0.2);
-    box-shadow: inset 0 -2px 0 #3498db;
+}
+
+/* Red Logout Button Style */
+.nav-links a[onclick*="logout"] {
+    color: #ff7675;
+    border: 1px solid rgba(255, 118, 117, 0.3);
+    margin-left: 10px;
+}
+
+.nav-links a[onclick*="logout"]:hover {
+    background: #d63031;
+    color: white;
+    border-color: #d63031;
 }
 
 /* --- 3. LAYOUT & CONTAINERS --- */
@@ -80,29 +97,36 @@ header {
     justify-content: space-between;
     align-items: center;
     gap: 15px;
-    margin-bottom: 20px;
+    margin-bottom: 25px;
+}
+
+header h1 {
+    font-size: 1.8rem;
+    color: #2c3e50;
 }
 
 .form-section, .list-section {
     background: white;
     padding: 25px;
-    margin-top: 20px;
+    margin-bottom: 30px;
     border-radius: 12px;
     box-shadow: 0 8px 24px rgba(0,0,0,0.05);
-    transition: transform 0.3s ease;
-}
-
-/* Subtle hover effect for cards */
-.form-section:hover, .list-section:hover {
-    transform: translateY(-2px);
 }
 
 /* --- 4. FORMS & INPUTS --- */
 .input-group {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 15px;
     margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 0.85rem;
+    color: #7f8c8d;
+    font-weight: 600;
 }
 
 input, select {
@@ -111,7 +135,8 @@ input, select {
     border: 1px solid #dfe6e9;
     border-radius: 8px;
     font-size: 1rem;
-    transition: border-color 0.3s, box-shadow 0.3s;
+    background-color: #fff;
+    transition: all 0.3s ease;
 }
 
 input:focus, select:focus {
@@ -123,7 +148,6 @@ input:focus, select:focus {
 .button-group {
     display: flex;
     gap: 10px;
-    flex-wrap: wrap;
 }
 
 button {
@@ -131,79 +155,90 @@ button {
     border-radius: 8px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
     border: none;
+    transition: 0.2s;
 }
 
-#submitBtn { background: #27ae60; color: white; }
-#submitBtn:hover { background: #219150; transform: scale(1.02); }
+#submitBtn { background: #27ae60; color: white; flex-grow: 1; }
+#submitBtn:hover { background: #219150; }
 
 #cancelBtn { background: #95a5a6; color: white; }
 
-/* --- 5. TABLES (MOBILE RESPONSIVE) --- */
+/* --- 5. TABLES (RESPONSIVE) --- */
 .table-container {
-    overflow-x: auto; /* Allows horizontal scroll on tiny phones */
     width: 100%;
+    overflow-x: auto;
 }
 
 table {
     width: 100%;
     border-collapse: collapse;
+    min-width: 600px;
+}
+
+th, td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid #f1f1f1;
 }
 
 th {
     background-color: #f8f9fa;
     color: #7f8c8d;
-    font-weight: 600;
-    text-transform: uppercase;
     font-size: 0.75rem;
+    text-transform: uppercase;
     letter-spacing: 1px;
 }
 
-th, td {
-    padding: 16px;
-    text-align: left;
-    border-bottom: 1px solid #f1f1f1;
-}
-
-tr:hover { background-color: #fdfdfd; }
+tr:hover { background-color: #f9fbff; }
 
 /* --- 6. STATUS BADGES --- */
-.status-badge {
-    padding: 6px 12px;
-    border-radius: 20px;
+.status-badge, .status-inprogress, .status-paid, .status-loading {
+    padding: 5px 12px;
+    border-radius: 50px;
     font-size: 0.75rem;
     font-weight: 700;
-    display: inline-block;
+    text-transform: uppercase;
 }
 
-.pending { background: #fff9db; color: #f08c00; }
-.approved { background: #ebfbee; color: #2b8a3e; }
+.pending, .status-inprogress { background: #fff4e6; color: #d9480f; }
+.approved, .status-paid { background: #ebfbee; color: #2b8a3e; }
 .rejected { background: #fff5f5; color: #c92a2a; }
 .paid { background: #e7f5ff; color: #1971c2; }
 
-/* --- 7. MOBILE BREAKPOINTS --- */
+/* --- 7. MOBILE OPTIMIZATION --- */
 @media (max-width: 768px) {
     .nav-container {
         flex-direction: column;
-        gap: 15px;
         text-align: center;
+        gap: 10px;
     }
 
-    .nav-links li { margin: 0 5px; }
+    .nav-links {
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .nav-links a {
+        font-size: 0.8rem;
+        padding: 6px 10px;
+    }
+
+    .nav-links a[onclick*="logout"] {
+        margin-left: 0;
+        width: 100%;
+        text-align: center;
+        margin-top: 5px;
+    }
 
     header {
         flex-direction: column;
-        text-align: center;
+        align-items: stretch;
     }
 
     .search-box input {
         width: 100%;
-    }
-
-    th, td {
-        padding: 10px 8px;
-        font-size: 0.9rem;
     }
 
     .form-section, .list-section {
