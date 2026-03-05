@@ -101,7 +101,8 @@ export const getTotalPaidForLoan = async (loan_id, userId) => {
              WHERE loan_id = $1 AND user_id = $2`,
             [loan_id, userId]
         );
-        return parseFloat(result.rows[0].total_paid);
+        // Ensure result.rows[0] exists before accessing total_paid
+        return result.rows[0] ? parseFloat(result.rows[0].total_paid) : 0;
     } catch (error) {
         handleRepaymentError('getTotalPaidForLoan', error);
     }
@@ -125,5 +126,3 @@ export const getRepaymentById = async (id, userId) => {
         handleRepaymentError('getRepaymentById', error);
     }
 };
-
-to
