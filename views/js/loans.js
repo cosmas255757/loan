@@ -1,149 +1,123 @@
-const LOAN_API = '/api/loans'; 
-const APP_API = '/api/applicants'; 
+const API_URL = '/api/loans';
+const APP_API_URL = '/api/applicants';
+const token = localStorage.getItem('token');
 
-document.addEventListener('DOMContentLoaded', () => {
-    fetchLoans();
-    loadApplicantDropdown(); // Fill the dropdown when page loads
-});
+if (!token) window.location.href = '/login';
 
-// --- LOAD APPLICANTS INTO DROPDOWN ---
-async function loadApplicantDropdown() {
-    try {
-        const res = await fetch(APP_API);
-        const data = await res.json();
-        const applicants = data.applicants || data || [];
-        
-        const select = document.getElementById('appId');
-        select.innerHTML = '<option value="">-- Select Applicant --</option>';
-        
-        applicants.forEach(app => {
-            const option = document.createElement('option');
-            option.value = app.id;
-            option.textContent = `${app.full_name} (${app.phone})`;
-            select.appendChild(option);
-        });
-    } catch (err) {
-        console.error("Error loading applicants:", err);
-    }
+// 1. Initial Load: Get Applicants for the dropdown and then Loans for the table
+async function init() {
+    await populateApplicantsDropdown();
+    await fetchLoans();
 }
 
-// --- READ ALL ---
+// 2. Fetch Applicants to fill the <select> dropdown
+async function populateApplicantsDropdown() {
+    try {
+        const res = await fetch(APP_API_URL, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const applicants = await res.json();
+        const select = document.getElementById('appId');
+        
+        select.innerHTML = '<option value="">-- Choose Applicant --</option>';
+        applicants.forEach(app => {
+            select.innerHTML += `<option value="${app.id}">${app.full_name}</option>`;
+        });
+    } catch (err) { console.error("Error loading applicants:", err); }
+}
+
+// 3. Fetch Loans and display in table
 async function fetchLoans() {
     try {
-        const res = await fetch(LOAN_API);
+        const res = await fetch(API_URL, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
         const data = await res.json();
-        // Adjusting for the { count, loans } format from your controller
-        renderTable(data.loans || data || []);
-    } catch (err) {
-        console.error("Fetch error:", err);
-    }
+        const tbody = document.getElementById('loanTableBody');
+        tbody.innerHTML = '';
+
+        // Note: data.loans because our controller wraps it in { count, loans }
+        data.loans.forEach(loan => {
+            tbody.innerHTML += `
+                <tr>
+                    <td>${loan.applicant_name}</td>
+                    <td>TSh ${Number(loan.amount).toLocaleString()}</td>
+                    <td><span class="status-badge ${loan.status}">${loan.status}</span></td>
+                    <td>${new Date(loan.created_at).toLocaleDateString()}</td>
+                    <td>
+                        <button class="btn-edit" onclick="editLoan(${loan.id}, ${loan.amount}, '${loan.status}')">Edit</button>
+                        <button class="btn-delete" onclick="deleteLoan(${loan.id})">Delete</button>
+                    </td>
+                </tr>`;
+        });
+    } catch (err) { console.error("Load Error:", err); }
 }
 
-// --- FILTER BY STATUS ---
-async function filterByStatus() {
-    const status = document.getElementById('statusFilter').value;
-    if (!status) return fetchLoans();
-    
-    try {
-        const res = await fetch(`${LOAN_API}/search?status=${status}`);
-        const data = await res.json();
-        renderTable(data.loans || data.results || []);
-    } catch (err) {
-        console.error("Search error:", err);
-    }
-}
-
-function renderTable(loans) {
-    const tbody = document.getElementById('loanTableBody');
-    tbody.innerHTML = ''; 
-
-    if (loans.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No loans found.</td></tr>';
-        return;
-    }
-
-    tbody.innerHTML = loans.map(loan => `
-        <tr>
-            <td class="font-bold">${loan.applicant_name}</td>
-            <td>TSh ${parseFloat(loan.amount).toLocaleString()}</td>
-            <td><span class="status-badge ${loan.status}">${loan.status}</span></td>
-            <td>${new Date(loan.created_at).toLocaleDateString()}</td>
-            <td class="actions">
-                <button class="btn-edit" onclick='prepareEdit(${JSON.stringify(loan)})'>Edit</button>
-                <button class="btn-delete" onclick="deleteLoan(${loan.id})">Delete</button>
-            </td>
-        </tr>
-    `).join('');
-}
-
-// --- CREATE & UPDATE ---
+// 4. Create or Update Loan
 document.getElementById('loanForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    
     const id = document.getElementById('editLoanId').value;
-    const applicant_id = document.getElementById('appId').value;
-    const amount = document.getElementById('loanAmount').value;
-    const status = document.getElementById('loanStatus').value;
+    
+    const loanData = {
+        applicant_id: document.getElementById('appId').value,
+        amount: document.getElementById('loanAmount').value,
+        status: document.getElementById('loanStatus').value
+    };
 
     const method = id ? 'PUT' : 'POST';
-    const url = id ? `${LOAN_API}/${id}` : LOAN_API;
-    
-    // Body changes based on whether it's a new loan or update
-    const body = id ? { amount, status } : { applicant_id, amount };
+    const url = id ? `${API_URL}/${id}` : API_URL;
 
     try {
         const res = await fetch(url, {
             method: method,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` 
+            },
+            body: JSON.stringify(loanData)
         });
 
-        if (!res.ok) {
-            const err = await res.json();
-            alert("Error: " + err.message);
-        } else {
+        if (res.ok) {
+            alert(id ? "Loan Updated!" : "Loan Issued!");
             resetForm();
             fetchLoans();
         }
-    } catch (err) {
-        console.error("Submit error:", err);
-    }
+    } catch (err) { alert("Action failed"); }
 });
 
-// --- DELETE ---
-async function deleteLoan(id) {
-    if (confirm("Delete this loan record?")) {
-        await fetch(`${LOAN_API}/${id}`, { method: 'DELETE' });
-        fetchLoans();
-    }
-}
-
-// --- UI HELPERS ---
-function prepareEdit(loan) {
-    document.getElementById('editLoanId').value = loan.id;
+// 5. Setup Edit Mode
+function editLoan(id, amount, status) {
+    document.getElementById('editLoanId').value = id;
+    document.getElementById('loanAmount').value = amount;
+    document.getElementById('loanStatus').value = status;
     
-    // Select the correct applicant in the dropdown
-    document.getElementById('appId').value = loan.applicant_id || "";
-    document.getElementById('appId').disabled = true; 
-    
-    document.getElementById('loanAmount').value = loan.amount;
-    document.getElementById('loanStatus').value = loan.status;
-    
-    // Show the status container and update labels
+    // Hide applicant selection (usually not changed after issuing)
+    document.getElementById('appId').parentElement.style.display = "none";
     document.getElementById('statusContainer').style.display = "block";
-    document.getElementById('submitBtn').innerText = "Update Loan";
-    document.getElementById('formTitle').innerText = "Edit Loan for " + loan.applicant_name;
-    document.getElementById('cancelBtn').style.display = "inline-block";
     
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    document.getElementById('formTitle').innerText = "Update Loan Status";
+    document.getElementById('submitBtn').innerText = "Save Changes";
+    document.getElementById('cancelBtn').style.display = "inline-block";
 }
 
 function resetForm() {
     document.getElementById('loanForm').reset();
-    document.getElementById('editLoanId').value = "";
-    document.getElementById('appId').disabled = false;
+    document.getElementById('editLoanId').value = '';
+    document.getElementById('appId').parentElement.style.display = "block";
     document.getElementById('statusContainer').style.display = "none";
-    document.getElementById('submitBtn').innerText = "Create Loan";
     document.getElementById('formTitle').innerText = "Issue New Loan";
+    document.getElementById('submitBtn').innerText = "Create Loan";
     document.getElementById('cancelBtn').style.display = "none";
 }
+
+async function deleteLoan(id) {
+    if (!confirm("Delete this loan?")) return;
+    await fetch(`${API_URL}/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    fetchLoans();
+}
+
+// Run on page load
+init();

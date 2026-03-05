@@ -1,15 +1,15 @@
 const loginForm = document.getElementById('loginForm');
 const loginBtn = loginForm.querySelector('.btn-auth');
 
-// 1. Pre-check: If already logged in, skip the login page
+// 1. Pre-check: Use the clean /dashboard route instead of the .html file
 if (localStorage.getItem('token')) {
-    window.location.href = 'stats.html';
+    window.location.href = '/dashboard'; 
 }
 
 loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    // UI Feedback: Disable button to prevent double-clicks
+    // UI Feedback
     loginBtn.disabled = true;
     loginBtn.innerText = "Authenticating...";
 
@@ -25,12 +25,13 @@ loginForm.addEventListener('submit', async (e) => {
 
         const result = await response.json();
 
-        if (result.success) {
+        if (response.ok && result.success) {
             // ✅ SUCCESS: Save JWT and go to Dashboard
             localStorage.setItem('token', result.token);
-            window.location.href = 'stats.html';
+            // Redirect to the route defined in your server.js
+            window.location.href = '/dashboard';
         } else {
-            // ❌ FAIL: Show error and clear password for security
+            // ❌ FAIL
             alert(result.message || "Invalid email or password.");
             document.getElementById('loginPassword').value = ''; 
         }
@@ -38,7 +39,6 @@ loginForm.addEventListener('submit', async (e) => {
         console.error("Login Error:", err);
         alert("Connection error. Is the server running?");
     } finally {
-        // Reset button state
         loginBtn.disabled = false;
         loginBtn.innerText = "Login to Dashboard";
     }

@@ -1,151 +1,151 @@
-const REPAYMENT_API = '/api/repayments';
-const LOAN_API = '/api/loans';
+const API_URL = '/api/repayments';
+const LOAN_API_URL = '/api/loans';
+const token = localStorage.getItem('token');
 
-document.addEventListener('DOMContentLoaded', () => {
-    fetchRepayments();
-    loadLoanDropdown(); // Fill the dropdown when page loads
-});
+if (!token) window.location.href = '/login';
 
-// --- LOAD LOANS INTO DROPDOWN ---
-async function loadLoanDropdown() {
-    try {
-        const res = await fetch(LOAN_API);
-        const data = await res.json();
-        const loans = data.loans || data || [];
-        
-        const select = document.getElementById('loanId');
-        select.innerHTML = '<option value="">-- Select Loan Record --</option>';
-        
-        loans.forEach(loan => {
-            // Only show loans that aren't fully paid if you prefer, 
-            // but for now, we show all approved loans
-            const option = document.createElement('option');
-            option.value = loan.id;
-            option.textContent = `${loan.applicant_name} (Loan: TSh ${parseFloat(loan.amount).toLocaleString()})`;
-            select.appendChild(option);
-        });
-    } catch (err) {
-        console.error("Error loading loans:", err);
-    }
+// 1. Initial Load
+async function init() {
+    await populateLoansDropdown();
+    await fetchRepayments();
+    // Set default date to today
+    document.getElementById('paymentDate').valueAsDate = new Date();
 }
 
-// --- READ ALL ---
+// 2. Fetch Loans for the dropdown (so user selects by Applicant Name)
+async function populateLoansDropdown() {
+    try {
+        const res = await fetch(LOAN_API_URL, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        const select = document.getElementById('loanId');
+        
+        select.innerHTML = '<option value="">-- Choose Loan/Applicant --</option>';
+        // Filter for 'active' or 'pending' loans so they don't keep paying for 'paid' loans
+        data.loans.forEach(loan => {
+            if (loan.status !== 'paid') {
+                select.innerHTML += `<option value="${loan.id}">${loan.applicant_name} (TSh ${Number(loan.amount).toLocaleString()})</option>`;
+            }
+        });
+    } catch (err) { console.error("Error loading loans:", err); }
+}
+
+// 3. Fetch Repayments and display in table
 async function fetchRepayments() {
     try {
-        const res = await fetch(REPAYMENT_API);
+        const res = await fetch(API_URL, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
         const data = await res.json();
-        // Matching the { count, repayments } format from your updated controller
-        renderTable(data.repayments || data || []);
-    } catch (err) {
-        console.error("Fetch error:", err);
-    }
+        const tbody = document.getElementById('repaymentTableBody');
+        tbody.innerHTML = '';
+
+        data.repayments.forEach(r => {
+            // Determine status color based on amount_left
+            let statusClass = 'status-inprogress';
+            let statusText = 'In Progress';
+            
+            if (Number(r.amount_left) <= 0) {
+                statusClass = 'status-paid';
+                statusText = 'Fully Paid';
+            }
+
+            tbody.innerHTML += `
+                <tr>
+                    <td>${r.applicant_name}</td>
+                    <td>TSh ${Number(r.amount_paid).toLocaleString()}</td>
+                    <td class="${Number(r.amount_left) > 0 ? 'text-danger' : ''}">
+                        TSh ${Number(r.amount_left).toLocaleString()}
+                    </td>
+                    <td>${new Date(r.payment_date).toLocaleDateString()}</td>
+                    <td><span class="${statusClass}">${statusText}</span></td>
+                    <td>
+                        <button class="btn-edit" onclick="editRepayment(${r.id}, ${r.amount_paid}, '${r.payment_date.split('T')[0]}', ${r.loan_id})">Edit</button>
+                        <button class="btn-delete" onclick="deleteRepayment(${r.id})">Delete</button>
+                    </td>
+                </tr>`;
+        });
+    } catch (err) { console.error("Load Error:", err); }
 }
 
-// --- SEARCH/FILTER BY NAME ---
-function filterByName() {
-    const searchTerm = document.getElementById('nameSearch').value.toLowerCase();
-    const rows = document.querySelectorAll('#repaymentTableBody tr');
-    
-    rows.forEach(row => {
-        const name = row.cells[0].textContent.toLowerCase();
-        row.style.display = name.includes(searchTerm) ? "" : "none";
-    });
-}
-
-function renderTable(repayments) {
-    const tbody = document.getElementById('repaymentTableBody');
-    tbody.innerHTML = ''; 
-
-    if (repayments.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No repayments recorded.</td></tr>';
-        return;
-    }
-
-    tbody.innerHTML = repayments.map(rp => `
-        <tr>
-            <td class="font-bold">${rp.applicant_name}</td>
-            <td>TSh ${parseFloat(rp.amount_paid).toLocaleString()}</td>
-            <td class="text-danger">TSh ${parseFloat(rp.amount_left).toLocaleString()}</td>
-            <td>${new Date(rp.payment_date).toLocaleDateString()}</td>
-            <td>
-                <span class="status-${rp.status}">
-                    ${rp.status.toUpperCase()}
-                </span>
-            </td>
-            <td class="actions">
-                <button class="btn-edit" onclick='prepareEdit(${JSON.stringify(rp)})'>Edit</button>
-                <button class="btn-delete" onclick="deleteRepayment(${rp.id})">Delete</button>
-            </td>
-        </tr>
-    `).join('');
-}
-
-// --- CREATE & UPDATE ---
+// 4. Save or Update Repayment
 document.getElementById('repaymentForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    
     const id = document.getElementById('editRepaymentId').value;
-    const loan_id = document.getElementById('loanId').value;
-    const amount_paid = document.getElementById('amountPaid').value;
-    const payment_date = document.getElementById('paymentDate').value;
+    
+    const paymentData = {
+        loan_id: document.getElementById('loanId').value,
+        amount_paid: document.getElementById('amountPaid').value,
+        payment_date: document.getElementById('paymentDate').value
+    };
 
     const method = id ? 'PUT' : 'POST';
-    const url = id ? `${REPAYMENT_API}/${id}` : REPAYMENT_API;
-    
-    const body = id 
-        ? { amount_paid, payment_date } 
-        : { loan_id, amount_paid, payment_date };
+    const url = id ? `${API_URL}/${id}` : API_URL;
 
     try {
         const res = await fetch(url, {
             method: method,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` 
+            },
+            body: JSON.stringify(paymentData)
         });
 
-        if (!res.ok) {
-            const err = await res.json();
-            alert("Error: " + err.message);
-        } else {
+        if (res.ok) {
+            alert(id ? "Payment Updated!" : "Payment Recorded!");
             resetForm();
             fetchRepayments();
+        } else {
+            const errData = await res.json();
+            alert("Error: " + errData.message);
         }
-    } catch (err) {
-        console.error("Submission error:", err);
-    }
+    } catch (err) { alert("Save failed"); }
 });
 
-// --- DELETE ---
-async function deleteRepayment(id) {
-    if (confirm("Permanently delete this payment record?")) {
-        await fetch(`${REPAYMENT_API}/${id}`, { method: 'DELETE' });
-        fetchRepayments();
-    }
-}
-
-// --- UI HELPERS ---
-function prepareEdit(rp) {
-    // Format date to YYYY-MM-DD for the input type="date"
-    const formattedDate = new Date(rp.payment_date).toISOString().split('T')[0];
-
-    document.getElementById('editRepaymentId').value = rp.id;
-    document.getElementById('loanId').value = rp.loan_id;
-    document.getElementById('loanId').disabled = true; 
-    document.getElementById('amountPaid').value = rp.amount_paid;
-    document.getElementById('paymentDate').value = formattedDate;
+// 5. Setup Edit Mode
+function editRepayment(id, amount, date, loanId) {
+    document.getElementById('editRepaymentId').value = id;
+    document.getElementById('amountPaid').value = amount;
+    document.getElementById('paymentDate').value = date;
+    document.getElementById('loanId').value = loanId;
     
-    document.getElementById('submitBtn').innerText = "Update Payment";
-    document.getElementById('formTitle').innerText = "Editing: " + rp.applicant_name;
+    document.getElementById('formTitle').innerText = "Update Payment Record";
+    document.getElementById('submitBtn').innerText = "Save Changes";
     document.getElementById('cancelBtn').style.display = "inline-block";
-    
-    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function resetForm() {
     document.getElementById('repaymentForm').reset();
-    document.getElementById('editRepaymentId').value = "";
-    document.getElementById('loanId').disabled = false;
-    document.getElementById('submitBtn').innerText = "Save Payment";
+    document.getElementById('editRepaymentId').value = '';
+    document.getElementById('paymentDate').valueAsDate = new Date();
     document.getElementById('formTitle').innerText = "Record New Payment";
+    document.getElementById('submitBtn').innerText = "Save Payment";
     document.getElementById('cancelBtn').style.display = "none";
 }
+
+async function deleteRepayment(id) {
+    if (!confirm("Remove this payment record?")) return;
+    await fetch(`${API_URL}/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    fetchRepayments();
+}
+
+// 6. Basic Search Filter
+function filterByName() {
+    const input = document.getElementById('nameSearch').value.toUpperCase();
+    const rows = document.getElementById('repaymentTableBody').getElementsByTagName('tr');
+    
+    for (let row of rows) {
+        const nameCol = row.getElementsByTagName('td')[0];
+        if (nameCol) {
+            const textValue = nameCol.textContent || nameCol.innerText;
+            row.style.display = textValue.toUpperCase().indexOf(input) > -1 ? "" : "none";
+        }
+    }
+}
+
+init();
