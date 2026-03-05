@@ -24,6 +24,12 @@ export const getDashboardStats = async (userId) => {
                 
                 -- 7. Total collected today
                 (SELECT COALESCE(SUM(amount_paid), 0) FROM repayments WHERE user_id = $1 AND payment_date = CURRENT_DATE) as collected_today,
+                
+                    -- 7. Total collected this week (Ensure the alias matches your frontend ID)
+                    (SELECT COALESCE(SUM(amount_paid), 0) 
+                    FROM repayments 
+                    WHERE user_id = $1 
+                    AND payment_date >= DATE_TRUNC('week', CURRENT_DATE)) as collected_this_week, 
 
                 -- 8. Total counts
                 (SELECT COUNT(*) FROM applicants WHERE user_id = $1) as total_applicants,
