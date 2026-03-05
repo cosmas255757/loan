@@ -5,27 +5,29 @@ dotenv.config();
 
 const { Pool } = pkg;
 
-// Only apply SSL if we are in production (Render) 
-// or if explicitly required by the provider (Neon)
+// Environment check for SSL (Required for Neon/Render)
 const isProduction = process.env.NODE_ENV === 'production' || process.env.DATABASE_URL?.includes('neon.tech');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: isProduction ? { rejectUnauthorized: false } : false,
   
-  // Best practice: add a timeout so the app doesn't hang if the DB is down
+  // Performance & Resilience settings
   connectionTimeoutMillis: 5000, 
   idleTimeoutMillis: 30000,
 });
 
+// Success Listener
 pool.on('connect', () => {
   console.log('✅ PostgreSQL Cloud Database Connected');
 });
 
+// Error Listener
 pool.on('error', (err) => {
   console.error('❌ Unexpected Database Error:', err.message);
-  // Don't exit in dev, but keep it for production safety
-  if (process.env.NODE_ENV === 'production') process.env.exit(-1);
+  if (process.env.NODE_ENV === 'production') {
+    process.exit(-1);
+  }
 });
 
 export default pool;

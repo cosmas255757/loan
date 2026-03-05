@@ -5,8 +5,8 @@ const handleLoanError = (operation, error) => {
     throw error;
 };
 
-// --- READ ALL (With JOIN for Full Name) ---
-export const getAllLoans = async () => {
+// --- READ ALL (Filtered by Logged-in User) ---
+export const getAllLoans = async (user_id) => {
     try {
         const result = await pool.query(
             `SELECT 
@@ -17,7 +17,9 @@ export const getAllLoans = async () => {
                 l.created_at
              FROM loans l
              JOIN applicants a ON l.applicant_id = a.id
-             ORDER BY l.id DESC`
+             WHERE l.user_id = $1
+             ORDER BY l.id DESC`,
+            [user_id]
         );
         return result.rows;
     } catch (error) {
@@ -25,8 +27,8 @@ export const getAllLoans = async () => {
     }
 };
 
-// Get loan by id
-export const getLoanById = async (id) => {
+// --- READ BY ID (Secure check for owner) ---
+export const getLoanById = async (id, user_id) => {
     try {
         const result = await pool.query(
             `SELECT 
@@ -38,8 +40,8 @@ export const getLoanById = async (id) => {
                 l.created_at
              FROM loans l
              JOIN applicants a ON l.applicant_id = a.id
-             WHERE l.id = $1`,
-            [id]
+             WHERE l.id = $1 AND l.user_id = $2`,
+            [id, user_id]
         );
         return result.rows[0] || null;
     } catch (error) {
@@ -47,58 +49,14 @@ export const getLoanById = async (id) => {
     }
 };
 
-// --- READ BY APPLICANT (With JOIN) ---
-export const getLoansByApplicant = async (applicant_id) => {
+// --- CREATE (Includes user_id) ---
+export const createLoan = async (applicant_id, amount, user_id) => {
     try {
         const result = await pool.query(
-            `SELECT 
-                l.id, 
-                a.full_name as applicant_name, 
-                l.amount, 
-                l.status, 
-                l.created_at
-             FROM loans l
-             JOIN applicants a ON l.applicant_id = a.id
-             WHERE l.applicant_id = $1
-             ORDER BY l.id DESC`,
-            [applicant_id]
-        );
-        return result.rows;
-    } catch (error) {
-        handleLoanError('getLoansByApplicant', error);
-    }
-};
-
-// --- SEARCH BY STATUS (With JOIN) ---
-export const searchLoansByStatus = async (status) => {
-    try {
-        const result = await pool.query(
-            `SELECT 
-                l.id, 
-                a.full_name as applicant_name, 
-                l.amount, 
-                l.status, 
-                l.created_at
-             FROM loans l
-             JOIN applicants a ON l.applicant_id = a.id
-             WHERE l.status ILIKE $1
-             ORDER BY l.id DESC`,
-            [`%${status}%`]
-        );
-        return result.rows;
-    } catch (error) {
-        handleLoanError('searchLoansByStatus', error);
-    }
-};
-
-// --- CREATE ---
-export const createLoan = async (applicant_id, amount) => {
-    try {
-        const result = await pool.query(
-            `INSERT INTO loans (applicant_id, amount)
-             VALUES ($1, $2)
+            `INSERT INTO loans (applicant_id, amount, user_id)
+             VALUES ($1, $2, $3)
              RETURNING *`,
-            [applicant_id, amount]
+            [applicant_id, amount, user_id]
         );
         return result.rows[0];
     } catch (error) {
@@ -106,16 +64,16 @@ export const createLoan = async (applicant_id, amount) => {
     }
 };
 
-// --- UPDATE ---
-export const updateLoan = async (id, amount, status) => {
+// --- UPDATE (Includes user_id check) ---
+export const updateLoan = async (id, amount, status, user_id) => {
     try {
         const result = await pool.query(
             `UPDATE loans
              SET amount = $1,
                  status = $2
-             WHERE id = $3
+             WHERE id = $3 AND user_id = $4
              RETURNING *`,
-            [amount, status, id]
+            [amount, status, id, user_id]
         );
         return result.rows[0] || null;
     } catch (error) {
@@ -123,15 +81,59 @@ export const updateLoan = async (id, amount, status) => {
     }
 };
 
-// --- DELETE ---
-export const deleteLoan = async (id) => {
+// --- DELETE (Includes user_id check) ---
+export const deleteLoan = async (id, user_id) => {
     try {
         const result = await pool.query(
-            `DELETE FROM loans WHERE id = $1 RETURNING *`,
-            [id]
+            `DELETE FROM loans WHERE id = $1 AND user_id = $2 RETURNING *`,
+            [id, user_id]
         );
         return result.rows[0] || null;
     } catch (error) {
         handleLoanError('deleteLoan', error);
+    }
+};
+
+// --- SEARCH BY STATUS (Filtered by User) ---
+export const searchLoansByStatus = async (status, user_id) => {
+    try {
+        const result = await pool.query(
+            `SELECT 
+                l.id, 
+                a.full_name as applicant_name, 
+                l.amount, 
+                l.status, 
+                l.created_at
+             FROM loans l
+             JOIN applicants a ON l.applicant_id = a.id
+             WHERE l.status ILIKE $1 AND l.user_id = $2
+             ORDER BY l.id DESC`,
+            [`%${status}%`, user_id]
+        );
+        return result.rows;
+    } catch (error) {
+        handleLoanError('searchLoansByStatus', error);
+    }
+};
+
+// --- READ BY APPLICANT (Secure check for owner) ---
+export const getLoansByApplicant = async (applicant_id, user_id) => {
+    try {
+        const result = await pool.query(
+            `SELECT 
+                l.id, 
+                a.full_name as applicant_name, 
+                l.amount, 
+                l.status, 
+                l.created_at
+             FROM loans l
+             JOIN applicants a ON l.applicant_id = a.id
+             WHERE l.applicant_id = $1 AND l.user_id = $2
+             ORDER BY l.id DESC`,
+            [applicant_id, user_id]
+        );
+        return result.rows;
+    } catch (error) {
+        handleLoanError('getLoansByApplicant', error);
     }
 };

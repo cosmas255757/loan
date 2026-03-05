@@ -7,52 +7,36 @@ import {
     searchApplicantsByName
 } from '../models/applicantModel.js';
 
-// Success helper to keep responses consistent
 const sendSuccess = (res, data, status = 200) => res.status(status).json(data);
 
-// Error helper to reduce repetitive code
 const sendError = (res, error) => {
     console.error("Controller Error:", error.message);
     res.status(500).json({ message: "Internal Server Error", error: error.message });
 };
+
 export const addApplicant = async (req, res) => {
     try {
-        const { 
-            full_name, 
-            phone, 
-            living_location, 
-            occupation, 
-            sex, 
-            relationship_status 
-        } = req.body;
+        const { full_name, phone, living_location, occupation, sex, relationship_status } = req.body;
+        const userId = req.user.id; // <--- CRITICAL: Get from Auth Middleware
 
-        // Validation: Check for required fields
         if (!full_name || !phone) {
             return res.status(400).json({ message: "Full name and phone are required" });
         }
 
-        // Pass all fields to the model function
         const applicant = await createApplicant(
-            full_name, 
-            phone, 
-            living_location, 
-            occupation, 
-            sex, 
-            relationship_status
+            full_name, phone, living_location, occupation, sex, relationship_status, userId
         );
 
         sendSuccess(res, { message: "Applicant created successfully", applicant }, 201);
     } catch (error) {
-        // If the database CHECK constraint fails (e.g., wrong 'sex' value), 
-        // sendError will catch it here.
         sendError(res, error);
     }
 };
 
-
 export const listApplicants = async (req, res) => {
     try {
-        const applicants = await getAllApplicants();
+        const userId = req.user.id; // <--- Filter by owner
+        const applicants = await getAllApplicants(userId);
         sendSuccess(res, applicants);
     } catch (error) {
         sendError(res, error);
@@ -62,10 +46,11 @@ export const listApplicants = async (req, res) => {
 export const getApplicant = async (req, res) => {
     try {
         const { id } = req.params;
-        const applicant = await getApplicantById(id);
+        const userId = req.user.id;
+        const applicant = await getApplicantById(id, userId);
 
         if (!applicant) {
-            return res.status(404).json({ message: `Applicant with ID ${id} not found` });
+            return res.status(404).json({ message: "Applicant not found or unauthorized" });
         }
 
         sendSuccess(res, applicant);
@@ -74,49 +59,34 @@ export const getApplicant = async (req, res) => {
     }
 };
 
-
 export const editApplicant = async (req, res) => {
     try {
-        const { id } = req.params; // Gets '3' from /api/applicants/3
-        const { 
-            full_name, 
-            phone, 
-            living_location, 
-            occupation, 
-            sex, 
-            relationship_status 
-        } = req.body;
+        const { id } = req.params;
+        const userId = req.user.id;
+        const { full_name, phone, living_location, occupation, sex, relationship_status } = req.body;
 
-        // Call the model function with all arguments
         const updated = await updateApplicant(
-            id, 
-            full_name, 
-            phone, 
-            living_location, 
-            occupation, 
-            sex, 
-            relationship_status
+            id, full_name, phone, living_location, occupation, sex, relationship_status, userId
         );
 
         if (!updated) {
-            return res.status(404).json({ message: "Applicant not found" });
+            return res.status(404).json({ message: "Applicant not found or unauthorized" });
         }
 
-        res.status(200).json({ message: "Updated successfully", applicant: updated });
+        sendSuccess(res, { message: "Updated successfully", applicant: updated });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Server Error" });
+        sendError(res, error);
     }
 };
-
 
 export const removeApplicant = async (req, res) => {
     try {
         const { id } = req.params;
-        const deleted = await deleteApplicant(id);
+        const userId = req.user.id;
+        const deleted = await deleteApplicant(id, userId);
 
         if (!deleted) {
-            return res.status(404).json({ message: "Cannot delete: Applicant not found" });
+            return res.status(404).json({ message: "Cannot delete: Not found or unauthorized" });
         }
 
         sendSuccess(res, { message: "Applicant deleted successfully", deleted });
@@ -128,13 +98,11 @@ export const removeApplicant = async (req, res) => {
 export const searchApplicants = async (req, res) => {
     try {
         const { name } = req.query;
+        const userId = req.user.id;
 
-        if (!name) {
-            // If no search term, maybe just return all? Or error:
-            return res.status(400).json({ message: "Please provide a name to search" });
-        }
+        if (!name) return res.status(400).json({ message: "Provide a name" });
 
-        const results = await searchApplicantsByName(name);
+        const results = await searchApplicantsByName(name, userId);
         sendSuccess(res, { count: results.length, results });
     } catch (error) {
         sendError(res, error);

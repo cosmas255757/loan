@@ -8,10 +8,8 @@ import {
     searchLoansByStatus
 } from '../models/loanModel.js';
 
-// Success helper
 const sendSuccess = (res, data, status = 200) => res.status(status).json(data);
 
-// Error helper
 const sendError = (res, error) => {
     console.error("Loan Controller Error:", error.message);
     res.status(500).json({ success: false, message: "Internal Server Error", error: error.message });
@@ -21,24 +19,25 @@ const sendError = (res, error) => {
 export const addLoan = async (req, res) => {
     try {
         const { applicant_id, amount } = req.body;
+        const userId = req.user.id; // <--- Mandatory for data ownership
 
         if (!applicant_id || !amount) {
             return res.status(400).json({ message: "Applicant ID and Amount are required" });
         }
 
-        const loan = await createLoan(applicant_id, amount);
-        // Note: createLoan returns the raw insert; the name join happens on 'list'
+        // Pass userId to the model
+        const loan = await createLoan(applicant_id, amount, userId);
         sendSuccess(res, { message: "Loan created successfully", loan }, 201);
     } catch (error) {
         sendError(res, error);
     }
 };
 
-// --- LIST ALL (Now includes applicant_name from Model Join) ---
+// --- LIST ALL (Filters by user) ---
 export const listLoans = async (req, res) => {
     try {
-        const loans = await getAllLoans();
-        // Wrapping in an object for easier frontend parsing
+        const userId = req.user.id;
+        const loans = await getAllLoans(userId);
         sendSuccess(res, { count: loans.length, loans });
     } catch (error) {
         sendError(res, error);
@@ -49,10 +48,11 @@ export const listLoans = async (req, res) => {
 export const getLoan = async (req, res) => {
     try {
         const { id } = req.params;
-        const loan = await getLoanById(id);
+        const userId = req.user.id;
+        const loan = await getLoanById(id, userId);
 
         if (!loan) {
-            return res.status(404).json({ message: `Loan ID ${id} not found` });
+            return res.status(404).json({ message: "Loan not found or unauthorized" });
         }
 
         sendSuccess(res, loan);
@@ -65,7 +65,8 @@ export const getLoan = async (req, res) => {
 export const listLoansByApplicant = async (req, res) => {
     try {
         const { applicant_id } = req.params;
-        const loans = await getLoansByApplicant(applicant_id);
+        const userId = req.user.id;
+        const loans = await getLoansByApplicant(applicant_id, userId);
         sendSuccess(res, { count: loans.length, loans });
     } catch (error) {
         sendError(res, error);
@@ -77,16 +78,16 @@ export const editLoan = async (req, res) => {
     try {
         const { id } = req.params;
         const { amount, status } = req.body;
+        const userId = req.user.id;
 
-        // Validation
         if (amount === undefined || !status) {
             return res.status(400).json({ message: "Amount and Status are required" });
         }
 
-        const updated = await updateLoan(id, amount, status);
+        const updated = await updateLoan(id, amount, status, userId);
 
         if (!updated) {
-            return res.status(404).json({ message: "Loan not found" });
+            return res.status(404).json({ message: "Loan not found or unauthorized" });
         }
 
         sendSuccess(res, { message: "Loan updated successfully", loan: updated });
@@ -99,10 +100,11 @@ export const editLoan = async (req, res) => {
 export const removeLoan = async (req, res) => {
     try {
         const { id } = req.params;
-        const deleted = await deleteLoan(id);
+        const userId = req.user.id;
+        const deleted = await deleteLoan(id, userId);
 
         if (!deleted) {
-            return res.status(404).json({ message: "Cannot delete: Loan not found" });
+            return res.status(404).json({ message: "Cannot delete: Not found or unauthorized" });
         }
 
         sendSuccess(res, { message: "Loan deleted successfully", deleted });
@@ -115,12 +117,11 @@ export const removeLoan = async (req, res) => {
 export const searchLoans = async (req, res) => {
     try {
         const { status } = req.query;
+        const userId = req.user.id;
 
-        if (!status) {
-            return res.status(400).json({ message: "Status query parameter is required" });
-        }
+        if (!status) return res.status(400).json({ message: "Status required" });
 
-        const results = await searchLoansByStatus(status);
+        const results = await searchLoansByStatus(status, userId);
         sendSuccess(res, { count: results.length, loans: results });
     } catch (error) {
         sendError(res, error);

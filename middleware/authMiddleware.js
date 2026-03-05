@@ -1,7 +1,6 @@
 import jwt from 'jsonwebtoken';
 
 export const authenticateToken = (req, res, next) => {
-    // Look for the token in the "Authorization" header (Format: Bearer <token>)
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 
@@ -9,12 +8,17 @@ export const authenticateToken = (req, res, next) => {
         return res.status(401).json({ success: false, message: "Access denied. No token provided." });
     }
 
+    // Safety check for the secret
+    if (!process.env.JWT_SECRET) {
+        console.error("❌ JWT_SECRET is missing in .env file");
+        return res.status(500).json({ success: false, message: "Internal server configuration error." });
+    }
+
     try {
-        // Verify the token using your secret key
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = decoded; // This adds { id: 123 } to the request
-        next(); // Move to the controller
+        req.user = decoded; 
+        next(); 
     } catch (error) {
-        res.status(403).json({ success: false, message: "Invalid or expired token." });
+        return res.status(403).json({ success: false, message: "Invalid or expired token." });
     }
 };

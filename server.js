@@ -1,6 +1,8 @@
+import dotenv from 'dotenv';
+dotenv.config(); // Must be at the very top
+
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -12,11 +14,8 @@ import loanRoutes from './routes/loanRoutes.js';
 import repaymentRoutes from './routes/repaymentRoutes.js';
 import pool from './config/db.js';
 
-// Setup for __dirname in ES Modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -29,10 +28,11 @@ app.use(cors({
 }));
 
 app.use(express.json());
+// Serve static files from the 'views' folder
 app.use(express.static(path.join(__dirname, 'views')));
 
 /* ============================
-   3. API ROUTES (Logics)
+   3. API ROUTES
 ============================ */
 app.use('/api/auth', authRoutes);
 app.use('/api/stats', statsRoutes);
@@ -45,41 +45,18 @@ app.get('/api/health', (req, res) => {
 });
 
 /* ============================
-   4. PAGE ROUTES (Navigation)
+   4. PAGE ROUTES
 ============================ */
-
-// AUTH PAGES
-app.get('/login', (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'login.html'));
-});
-
-app.get('/register', (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'register.html'));
-});
-
-// DASHBOARD & OTHER PAGES
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'stats.html'));
-});
-
-app.get('/dashboard', (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'stats.html'));
-});
-
-app.get('/applicants', (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'applicants.html'));
-});
-
-app.get('/loans', (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'loans.html'));
-});
-
-app.get('/repayments', (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'repayments.html'));
-});
+app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'views', 'login.html')));
+app.get('/register', (req, res) => res.sendFile(path.join(__dirname, 'views', 'register.html')));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'views', 'stats.html')));
+app.get('/dashboard', (req, res) => res.sendFile(path.join(__dirname, 'views', 'stats.html')));
+app.get('/applicants', (req, res) => res.sendFile(path.join(__dirname, 'views', 'applicants.html')));
+app.get('/loans', (req, res) => res.sendFile(path.join(__dirname, 'views', 'loans.html')));
+app.get('/repayments', (req, res) => res.sendFile(path.join(__dirname, 'views', 'repayments.html')));
 
 /* ============================
-   5. DB CONNECTION & ERROR HANDLING
+   5. DB CONNECTION CHECK
 ============================ */
 const checkDbConnection = async () => {
     try {
@@ -91,6 +68,9 @@ const checkDbConnection = async () => {
 };
 checkDbConnection();
 
+/* ============================
+   6. ERROR HANDLING
+============================ */
 app.use((req, res) => {
     res.status(404).json({ success: false, message: 'Route not found' });
 });

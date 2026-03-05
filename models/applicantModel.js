@@ -1,35 +1,28 @@
 import pool from '../config/db.js';
 
-/**
- * Helper to log and throw DB errors
- */
 const handleDbError = (operation, error) => {
     console.error(`Database Error during ${operation}:`, error.message);
     throw error;
 };
 
-// create a new applicant..
+// 1. ADDED user_id HERE
 export const createApplicant = async (
     full_name, 
     phone, 
     living_location, 
     occupation, 
     sex, 
-    relationship_status
+    relationship_status,
+    user_id 
 ) => {
     try {
         const result = await pool.query(
             `INSERT INTO applicants (
-                full_name, 
-                phone, 
-                living_location, 
-                occupation, 
-                sex, 
-                relationship_status
+                full_name, phone, living_location, occupation, sex, relationship_status, user_id
              )
-             VALUES ($1, $2, $3, $4, $5, $6)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)
              RETURNING *`,
-            [full_name, phone, living_location, occupation, sex, relationship_status]
+            [full_name, phone, living_location, occupation, sex, relationship_status, user_id]
         );
         return result.rows[0];
     } catch (error) {
@@ -37,12 +30,12 @@ export const createApplicant = async (
     }
 };
 
-// get all applicants...
-export const getAllApplicants = async () => {
+// 2. FILTER BY user_id so users only see their own data
+export const getAllApplicants = async (user_id) => {
     try {
         const result = await pool.query(
-            `SELECT * FROM applicants
-             ORDER BY id DESC`
+            `SELECT * FROM applicants WHERE user_id = $1 ORDER BY id DESC`,
+            [user_id]
         );
         return result.rows;
     } catch (error) {
@@ -50,34 +43,28 @@ export const getAllApplicants = async () => {
     }
 };
 
-export const getApplicantById = async (id) => {
+// 3. SECURE BY user_id
+export const getApplicantById = async (id, user_id) => {
     try {
         const result = await pool.query(
-            `SELECT * FROM applicants
-             WHERE id = $1`,
-            [id]
+            `SELECT * FROM applicants WHERE id = $1 AND user_id = $2`,
+            [id, user_id]
         );
-        // Returns null if no applicant found, which is easier to check in your routes
         return result.rows[0] || null;
     } catch (error) {
         handleDbError('getApplicantById', error);
     }
 };
 
-
-export const updateApplicant = async (id, full_name, phone, living_location, occupation, sex, relationship_status) => {
+export const updateApplicant = async (id, full_name, phone, living_location, occupation, sex, relationship_status, user_id) => {
     try {
         const result = await pool.query(
             `UPDATE applicants 
-             SET full_name = $1, 
-                 phone = $2, 
-                 living_location = $3, 
-                 occupation = $4, 
-                 sex = $5, 
-                 relationship_status = $6
-             WHERE id = $7
+             SET full_name = $1, phone = $2, living_location = $3, 
+                 occupation = $4, sex = $5, relationship_status = $6
+             WHERE id = $7 AND user_id = $8
              RETURNING *`,
-            [full_name, phone, living_location, occupation, sex, relationship_status, id]
+            [full_name, phone, living_location, occupation, sex, relationship_status, id, user_id]
         );
         return result.rows[0];
     } catch (error) {
@@ -85,14 +72,11 @@ export const updateApplicant = async (id, full_name, phone, living_location, occ
     }
 };
 
-
-export const deleteApplicant = async (id) => {
+export const deleteApplicant = async (id, user_id) => {
     try {
         const result = await pool.query(
-            `DELETE FROM applicants
-             WHERE id = $1
-             RETURNING *`,
-            [id]
+            `DELETE FROM applicants WHERE id = $1 AND user_id = $2 RETURNING *`,
+            [id, user_id]
         );
         return result.rows[0] || null;
     } catch (error) {
@@ -100,13 +84,11 @@ export const deleteApplicant = async (id) => {
     }
 };
 
-export const searchApplicantsByName = async (name) => {
+export const searchApplicantsByName = async (name, user_id) => {
     try {
         const result = await pool.query(
-            `SELECT * FROM applicants
-             WHERE full_name ILIKE $1
-             ORDER BY id DESC`,
-            [`%${name}%`]
+            `SELECT * FROM applicants WHERE full_name ILIKE $1 AND user_id = $2 ORDER BY id DESC`,
+            [`%${name}%`, user_id]
         );
         return result.rows;
     } catch (error) {
