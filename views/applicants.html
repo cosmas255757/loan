@@ -12,6 +12,7 @@
         <div class="nav-container">
             <span class="brand">💰 LoanSystem</span>
             <ul class="nav-links">
+                <li><a href="#" onclick="logout()">Logout</a></li>
                 <li><a href="stats.html" class="active">Dashboard</a></li>
                 <li><a href="applicants.html">Applicants</a></li>
                 <li><a href="loans.html">Loans</a></li>
@@ -94,5 +95,11 @@
         </main>
     </div>
     <script src="js/applicants.js"></script>
+    <script>
+function logout() {
+    localStorage.removeItem('token'); // Clear the session
+    window.location.href = '/login';   // Go back to login
+}
+</script>
 </body>
 </html>
