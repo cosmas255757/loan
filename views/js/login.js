@@ -2,9 +2,9 @@ const loginForm = document.getElementById('loginForm');
 const loginBtn = loginForm.querySelector('.btn-auth');
 
 // 1. Pre-check: Use the clean /dashboard route instead of the .html file
-if (localStorage.getItem('token')) {
-    window.location.href = '/dashboard'; 
-}
+// if (localStorage.getItem('token')) {
+//     window.location.href = '/dashboard'; 
+// }
 
 loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
