@@ -1,10 +1,15 @@
 const loginForm = document.getElementById('loginForm');
 const loginBtn = loginForm.querySelector('.btn-auth');
 
-// 1. Pre-check: Use the clean /dashboard route instead of the .html file
-// if (localStorage.getItem('token')) {
-//     window.location.href = '/dashboard'; 
-// }
+// Check for token immediately on page load
+if (localStorage.getItem('token')) {
+    // If token exists, send them to the clean dashboard route
+    window.location.href = '/dashboard';
+} else {
+    // If no token, allow them to stay on the login page
+    console.log("No session found. Please log in.");
+}
+
 
 loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
