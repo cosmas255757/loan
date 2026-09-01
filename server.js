@@ -23,9 +23,7 @@ const PORT = process.env.PORT || 3000;
 /* ============================
    2. GLOBAL MIDDLEWARE
 ============================ */
-app.use(cors({
-  origin: ['https://loan-2-a2d1.onrender.com', 'http://localhost:3000'] 
-}));
+app.use(cors());
 
 app.use(express.json());
 // Serve static files from the 'views' folder
