@@ -1,10 +1,8 @@
 import dotenv from 'dotenv';
-dotenv.config(); // Must be at the very top
+dotenv.config(); 
 
 import express from 'express';
 import cors from 'cors';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
 // 1. IMPORT ALL ROUTES
 import authRoutes from './routes/authRoutes.js';
@@ -14,23 +12,24 @@ import loanRoutes from './routes/loanRoutes.js';
 import repaymentRoutes from './routes/repaymentRoutes.js';
 import pool from './config/db.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 const app = express();
 const PORT = process.env.PORT || 10000;
 
 /* ============================
-   2. GLOBAL MIDDLEWARE
+   2. GLOBAL MIDDLEWARE & CORS
 ============================ */
-app.use(cors());
-
+const corsOptions = {
+    // Allows live Render frontend and local Vite environment to make API calls
+    origin: ['https://onrender.com', 'http://localhost:5173'], 
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
+};
+app.use(cors(corsOptions));
 app.use(express.json());
-// Serve static files from the 'views' folder
-app.use(express.static(path.join(__dirname, 'views')));
 
 /* ============================
-   3. API ROUTES
+   3. API ENDPOINTS
 ============================ */
 app.use('/api/auth', authRoutes);
 app.use('/api/stats', statsRoutes);
@@ -38,23 +37,13 @@ app.use('/api/applicants', applicantRoutes);
 app.use('/api/loans', loanRoutes);
 app.use('/api/repayments', repaymentRoutes);
 
+// Health check endpoint for monitoring uptime
 app.get('/api/health', (req, res) => {
-    res.status(200).json({ status: 'OK', message: 'Loan System API is healthy' });
+    res.status(200).json({ status: 'OK', message: 'Loan System API is healthy and connected to Render' });
 });
 
 /* ============================
-   4. PAGE ROUTES
-============================ */
-app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'views', 'login.html')));
-app.get('/register', (req, res) => res.sendFile(path.join(__dirname, 'views', 'register.html')));
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'views', 'stats.html')));
-app.get('/dashboard', (req, res) => res.sendFile(path.join(__dirname, 'views', 'stats.html')));
-app.get('/applicants', (req, res) => res.sendFile(path.join(__dirname, 'views', 'applicants.html')));
-app.get('/loans', (req, res) => res.sendFile(path.join(__dirname, 'views', 'loans.html')));
-app.get('/repayments', (req, res) => res.sendFile(path.join(__dirname, 'views', 'repayments.html')));
-
-/* ============================
-   5. DB CONNECTION CHECK
+   4. DB CONNECTION CHECK
 ============================ */
 const checkDbConnection = async () => {
     try {
@@ -64,15 +53,16 @@ const checkDbConnection = async () => {
         console.error('❌ Database connection failed:', err.message);
     }
 };
-checkDbConnection();
 
 /* ============================
-   6. ERROR HANDLING
+   5. ERROR HANDLING
 ============================ */
+// Catch-all for undefined API paths
 app.use((req, res) => {
-    res.status(404).json({ success: false, message: 'Route not found' });
+    res.status(404).json({ success: false, message: 'API Route not found' });
 });
 
+// Global internal server error boundary
 app.use((err, req, res, next) => {
     console.error(`[Global Error]: ${err.message}`);
     res.status(err.statusCode || 500).json({
@@ -81,7 +71,10 @@ app.use((err, req, res, next) => {
     });
 });
 
+/* ============================
+   6. START APPLICATION SERVER
+============================ */
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`🚀 API-Only Server running on port ${PORT}`);
     checkDbConnection();
 });
