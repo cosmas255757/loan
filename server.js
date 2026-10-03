@@ -20,10 +20,14 @@ const PORT = process.env.PORT || 10000;
 ============================ */
 const corsOptions = {
     // Allows live Render frontend and local Vite environment to make API calls
-    origin: ['https://onrender.com', 'http://localhost:5173'], 
+    origin: ['http://localhost:5173'
+             'https://loan-static-page.onrender.com', 
+             'http://localhost:5173',
+             'http://127.0.0.1:5173'], 
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true
+    credentials: true,
+    optionsSuccessStatus: 200 
 };
 app.use(cors(corsOptions));
 app.use(express.json());
